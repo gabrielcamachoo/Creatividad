@@ -1,4 +1,4 @@
-import sqlite3 from 'sqlite3';
+import initSqlJs, { Database as SqlJsDatabase } from 'sql.js';
 import path from 'path';
 import fs from 'fs';
 
@@ -9,40 +9,87 @@ if (!fs.existsSync(DB_DIR)) {
   fs.mkdirSync(DB_DIR, { recursive: true });
 }
 
-export const db = new sqlite3.Database(DB_FILE, (err) => {
-  if (err) {
-    console.error('Error al conectar con SQLite:', err);
-  } else {
-    console.log(`✓ Base de datos SQLite conectada en: ${DB_FILE}`);
+let dbInstance: SqlJsDatabase | null = null;
+let dbInitPromise: Promise<SqlJsDatabase> | null = null;
+
+async function getDb(): Promise<SqlJsDatabase> {
+  if (dbInstance) return dbInstance;
+  if (!dbInitPromise) {
+    dbInitPromise = (async () => {
+      const SQL = await initSqlJs();
+      if (fs.existsSync(DB_FILE)) {
+        const fileBuffer = fs.readFileSync(DB_FILE);
+        dbInstance = new SQL.Database(fileBuffer);
+      } else {
+        dbInstance = new SQL.Database();
+      }
+      console.log(`✓ Base de datos SQLite (WASM) conectada en: ${DB_FILE}`);
+      return dbInstance;
+    })();
   }
-});
-
-// Promisified query helpers
-export function dbRun(sql: string, params: any[] = []): Promise<{ lastID?: number; changes?: number }> {
-  return new Promise((resolve, reject) => {
-    db.run(sql, params, function (err) {
-      if (err) reject(err);
-      else resolve({ lastID: this.lastID, changes: this.changes });
-    });
-  });
+  return dbInitPromise;
 }
 
-export function dbGet<T = any>(sql: string, params: any[] = []): Promise<T | undefined> {
-  return new Promise((resolve, reject) => {
-    db.get(sql, params, (err, row) => {
-      if (err) reject(err);
-      else resolve(row as T);
-    });
-  });
+function saveDatabaseToDisk(database: SqlJsDatabase): void {
+  try {
+    const data = database.export();
+    fs.writeFileSync(DB_FILE, Buffer.from(data));
+  } catch (err) {
+    console.warn('Aviso al persistir SQLite en disco:', err);
+  }
 }
 
-export function dbAll<T = any>(sql: string, params: any[] = []): Promise<T[]> {
-  return new Promise((resolve, reject) => {
-    db.all(sql, params, (err, rows) => {
-      if (err) reject(err);
-      else resolve(rows as T[]);
-    });
-  });
+function sanitizeParams(params: any[] = []): any[] {
+  return params.map((p) => (p === undefined ? null : p));
+}
+
+export const db = {};
+
+// Promisified query helpers compatibles con toda la API
+export async function dbRun(
+  sql: string,
+  params: any[] = []
+): Promise<{ lastID?: number; changes?: number }> {
+  const database = await getDb();
+  database.run(sql, sanitizeParams(params));
+  const changes = database.getRowsModified();
+  saveDatabaseToDisk(database);
+  return { lastID: 0, changes };
+}
+
+export async function dbGet<T = any>(sql: string, params: any[] = []): Promise<T | undefined> {
+  const database = await getDb();
+  const stmt = database.prepare(sql);
+  try {
+    const clean = sanitizeParams(params);
+    if (clean.length > 0) {
+      stmt.bind(clean);
+    }
+    if (stmt.step()) {
+      return stmt.getAsObject() as unknown as T;
+    }
+    return undefined;
+  } finally {
+    stmt.free();
+  }
+}
+
+export async function dbAll<T = any>(sql: string, params: any[] = []): Promise<T[]> {
+  const database = await getDb();
+  const stmt = database.prepare(sql);
+  try {
+    const clean = sanitizeParams(params);
+    if (clean.length > 0) {
+      stmt.bind(clean);
+    }
+    const rows: T[] = [];
+    while (stmt.step()) {
+      rows.push(stmt.getAsObject() as unknown as T);
+    }
+    return rows;
+  } finally {
+    stmt.free();
+  }
 }
 
 // Función auxiliar para agregar columnas si no existen
