@@ -78,7 +78,7 @@ export const SubjectDetailScreen: React.FC = () => {
     e.preventDefault();
     if (!topicName.trim()) return;
 
-    addTopic(
+    const createdTopic = addTopic(
       subject.id,
       topicName.trim(),
       currentDateStr,
@@ -89,7 +89,9 @@ export const SubjectDetailScreen: React.FC = () => {
 
     try {
       await api.addTopic(subject.id, {
+        id: createdTopic.id,
         name: topicName.trim(),
+        classDate: currentDateStr,
         status: initialStatus,
         summary: initialSummary.trim(),
       });

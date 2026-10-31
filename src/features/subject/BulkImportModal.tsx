@@ -90,28 +90,33 @@ export const BulkImportModal: React.FC = () => {
     );
 
     // 2. Insertar temas clasificados con su respectivo estado
-    cleanMastered.forEach((name) => {
-      addTopic(newSubId, name, todayStr, 'green');
+    const masteredCreated = cleanMastered.map((name) => {
+      const t = addTopic(newSubId, name, todayStr, 'green');
+      return { id: t.id, name: t.name };
     });
 
-    cleanPartial.forEach((name) => {
-      addTopic(newSubId, name, todayStr, 'yellow');
+    const partialCreated = cleanPartial.map((name) => {
+      const t = addTopic(newSubId, name, todayStr, 'yellow');
+      return { id: t.id, name: t.name };
     });
 
-    cleanUnknown.forEach((name) => {
-      addTopic(newSubId, name, todayStr, 'red');
+    const unknownCreated = cleanUnknown.map((name) => {
+      const t = addTopic(newSubId, name, todayStr, 'red');
+      return { id: t.id, name: t.name };
     });
 
     // 3. Sincronizar en segundo plano con el backend
     try {
       await api.bulkImport({
+        id: newSubId,
         subjectName: subjectName.trim(),
-        code: code.trim(),
+        code: code.trim() || subjectName.trim().substring(0, 3).toUpperCase(),
         colorTheme,
+        emoji: selectedEmoji,
         examDate: examDate || undefined,
-        masteredTopics: cleanMastered,
-        partialTopics: cleanPartial,
-        unknownTopics: cleanUnknown,
+        masteredTopics: masteredCreated,
+        partialTopics: partialCreated,
+        unknownTopics: unknownCreated,
       });
     } catch (err) {
       console.warn('Guardado localmente', err);

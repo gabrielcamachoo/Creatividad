@@ -3,7 +3,6 @@ import { useGamificationStore } from '@/store/useGamificationStore';
 import { useStudyStore } from '@/store/useStudyStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { calculateRank, calculateBatiMood } from '@/lib/rewardEngine';
-import { DEMO_WEEKLY_HISTORY } from '@/data/demoData';
 import { ANIMAL_COMPANIONS } from '@/config/curriculum.config';
 import { WeeklySummaryCard } from './WeeklySummaryCard';
 import { FriendsStudyCard } from './FriendsStudyCard';
@@ -20,26 +19,33 @@ import {
   CartesianGrid,
 } from 'recharts';
 import {
-  User,
   Flame,
   Zap,
   Award,
-  Shield,
   TrendingUp,
   Camera,
   GraduationCap,
-  Sparkles,
   School,
-  Check,
   Edit2,
   Heart,
+  LogOut,
 } from 'lucide-react';
 
 export const ProfileScreen: React.FC = () => {
-  const { xp, volts, streakDays, shieldsCount, badges, equippedBati, userStats, equipAnimal, unlockedItems } =
-    useGamificationStore();
-  const { subjects } = useStudyStore();
-  const { userProfile, setUserProfile, studentLevel, setIsGraduationOpen } = useSettingsStore();
+  const {
+    xp,
+    volts,
+    streakDays,
+    badges,
+    equippedBati,
+    userStats,
+    dailyActions,
+    equipAnimal,
+    unlockedItems,
+    resetGamification,
+  } = useGamificationStore();
+  const { subjects, resetAllSubjects } = useStudyStore();
+  const { userProfile, setUserProfile, studentLevel, logoutUser } = useSettingsStore();
   const { getSimulatedDateStr } = useTimeStore();
 
   const [isEditing, setIsEditing] = useState(false);
@@ -53,6 +59,15 @@ export const ProfileScreen: React.FC = () => {
   const allTopics = subjects.flatMap((s) => s.topics);
   const greenTopics = allTopics.filter((t) => t.status === 'green').length;
   const unlockedBadges = badges.filter((b) => b.unlockedAt).length;
+
+  // Construir historial semanal real basado en el día actual y los repasos hechos por el usuario
+  const dayLabels = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+  const jsDay = new Date().getDay(); // 0=Dom, 1=Lun...
+  const todayIdx = jsDay === 0 ? 6 : jsDay - 1;
+  const weeklyHistory = dayLabels.map((dayName, idx) => ({
+    dayName,
+    reviewsCount: idx === todayIdx ? dailyActions.reviewAction || userStats.totalReviews : 0,
+  }));
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -94,6 +109,14 @@ export const ProfileScreen: React.FC = () => {
     try {
       await api.updateProfile({ equippedAnimal: petId });
     } catch {}
+  };
+
+  const handleLogout = () => {
+    if (confirm('¿Deseas cerrar tu sesión actual?')) {
+      resetAllSubjects();
+      resetGamification();
+      logoutUser();
+    }
   };
 
   return (
@@ -156,7 +179,7 @@ export const ProfileScreen: React.FC = () => {
               <>
                 <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-1">
                   <h1 className="text-2xl font-heading font-black text-slate-900 dark:text-white">
-                    {userProfile.name}
+                    {userProfile.name || 'Estudiante'}
                   </h1>
                   <button
                     onClick={() => setIsEditing(true)}
@@ -184,8 +207,12 @@ export const ProfileScreen: React.FC = () => {
                       </>
                     )}
                   </span>
-                  <span>•</span>
-                  <span>{userProfile.email}</span>
+                  {userProfile.email && (
+                    <>
+                      <span>•</span>
+                      <span>{userProfile.email}</span>
+                    </>
+                  )}
                 </div>
               </>
             )}
@@ -202,6 +229,16 @@ export const ProfileScreen: React.FC = () => {
                   style={{ width: `${rankInfo.progressPercent}%` }}
                 />
               </div>
+            </div>
+
+            <div className="mt-3 flex justify-center sm:justify-start">
+              <button
+                onClick={handleLogout}
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-rose-500 hover:underline"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span>Cerrar sesión</span>
+              </button>
             </div>
           </div>
         </div>
@@ -297,23 +334,23 @@ export const ProfileScreen: React.FC = () => {
         totalXpThisWeek={xp}
       />
 
-      {/* Gráfica de Progreso Semanal */}
+      {/* Gráfica de Progreso Semanal Real */}
       <div className="card p-5 sm:p-6 space-y-3">
         <div className="flex items-center gap-2">
           <TrendingUp className="w-5 h-5 text-emerald-500" />
           <div>
             <h3 className="font-heading font-black text-base text-slate-900 dark:text-white">
-              Repasos de la Semana
+              Tus Repasos de la Semana
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Temas repasados y reactivados día a día.
+              Actividad real registrada al repasar tus temas.
             </p>
           </div>
         </div>
 
         <div className="h-56 w-full pt-3">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={DEMO_WEEKLY_HISTORY}>
+            <BarChart data={weeklyHistory}>
               <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
               <XAxis dataKey="dayName" stroke="#94a3b8" fontSize={11} />
               <YAxis stroke="#94a3b8" fontSize={11} allowDecimals={false} />

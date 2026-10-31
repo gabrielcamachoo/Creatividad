@@ -11,79 +11,6 @@ function generateUniqueId(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 }
 
-const DEFAULT_SCHEDULE: ScheduleItem[] = [
-  {
-    id: 'sch-1',
-    subjectName: 'Cálculo Diferencial',
-    subjectEmoji: '📐',
-    dayOfWeek: 'Lunes',
-    startTime: '08:00',
-    endTime: '10:00',
-    room: 'Edificio B - Salón 302',
-  },
-  {
-    id: 'sch-2',
-    subjectName: 'Física Mecánica',
-    subjectEmoji: '⚡',
-    dayOfWeek: 'Miércoles',
-    startTime: '10:00',
-    endTime: '12:00',
-    room: 'Laboratorio de Ciencias 1',
-  },
-  {
-    id: 'sch-3',
-    subjectName: 'Química Orgánica',
-    subjectEmoji: '🔬',
-    dayOfWeek: 'Jueves',
-    startTime: '14:00',
-    endTime: '16:00',
-    room: 'Aula Virtual Teams',
-  },
-];
-
-const DEFAULT_FRIENDS: Friend[] = [
-  {
-    id: 'fr-1',
-    name: 'Santiago Echeverry',
-    email: 'santiago@misemaforo.edu.co',
-    streakDays: 8,
-    level: 3,
-    xp: 680,
-    equippedAnimal: 'owl',
-    cheeredToday: false,
-  },
-  {
-    id: 'fr-2',
-    name: 'Gabriel Camacho',
-    email: 'gabriel@misemaforo.edu.co',
-    streakDays: 6,
-    level: 3,
-    xp: 590,
-    equippedAnimal: 'fox',
-    cheeredToday: false,
-  },
-  {
-    id: 'fr-3',
-    name: 'Alejandro Jimenez',
-    email: 'alejandro@misemaforo.edu.co',
-    streakDays: 12,
-    level: 4,
-    xp: 1120,
-    equippedAnimal: 'dragon',
-    cheeredToday: false,
-  },
-  {
-    id: 'fr-4',
-    name: 'Sebastian Galvis',
-    email: 'sebastian@misemaforo.edu.co',
-    streakDays: 7,
-    level: 3,
-    xp: 620,
-    equippedAnimal: 'dog',
-    cheeredToday: false,
-  },
-];
-
 interface StudyState {
   subjects: Subject[];
   schedule: ScheduleItem[];
@@ -96,7 +23,8 @@ interface StudyState {
     colorTheme?: string,
     emoji?: string,
     summary?: string,
-    examDate?: string
+    examDate?: string,
+    customId?: string
   ) => string;
   updateSubject: (
     subjectId: string,
@@ -112,7 +40,8 @@ interface StudyState {
     status?: MasteryLevel,
     lastReviewedDate?: string,
     summary?: string,
-    summaryPhoto?: string
+    summaryPhoto?: string,
+    customId?: string
   ) => Topic;
   updateTopic: (
     subjectId: string,
@@ -141,12 +70,12 @@ interface StudyState {
   setSubjectExamDate: (subjectId: string, examDateStr?: string) => void;
 
   // Horario
-  addScheduleItem: (item: Omit<ScheduleItem, 'id'>) => ScheduleItem;
+  addScheduleItem: (item: Omit<ScheduleItem, 'id'> & { id?: string }) => ScheduleItem;
   deleteScheduleItem: (id: string) => void;
   setSchedule: (schedule: ScheduleItem[]) => void;
 
   // Amigos
-  addFriend: (email: string, name?: string) => Friend;
+  addFriend: (email: string, name?: string, customFriend?: Partial<Friend>) => Friend;
   cheerFriend: (id: string) => void;
   setFriends: (friends: Friend[]) => void;
 
@@ -163,9 +92,9 @@ interface StudyState {
 export const useStudyStore = create<StudyState>()(
   persist(
     (set, get) => ({
-      subjects: DEMO_SUBJECTS,
-      schedule: DEFAULT_SCHEDULE,
-      friends: DEFAULT_FRIENDS,
+      subjects: [],
+      schedule: [],
+      friends: [],
 
       addSubject: (
         name: string,
@@ -173,9 +102,10 @@ export const useStudyStore = create<StudyState>()(
         colorTheme: string = 'blue',
         emoji: string = '📚',
         summary: string = '',
-        examDate?: string
+        examDate?: string,
+        customId?: string
       ) => {
-        const id = generateUniqueId('sub');
+        const id = customId || generateUniqueId('sub');
         const newSubject: Subject = {
           id,
           name: name.trim(),
@@ -213,9 +143,10 @@ export const useStudyStore = create<StudyState>()(
         status: MasteryLevel = 'yellow',
         lastReviewedDate?: string,
         summary: string = '',
-        summaryPhoto: string = ''
+        summaryPhoto: string = '',
+        customId?: string
       ) => {
-        const topicId = generateUniqueId('top');
+        const topicId = customId || generateUniqueId('top');
         const cDate = classDate || new Date().toISOString().split('T')[0];
         const rDate = lastReviewedDate || cDate;
 
@@ -380,9 +311,9 @@ export const useStudyStore = create<StudyState>()(
       },
 
       // Horario
-      addScheduleItem: (item: Omit<ScheduleItem, 'id'>) => {
-        const id = generateUniqueId('sch');
-        const newItem: ScheduleItem = { id, ...item };
+      addScheduleItem: (item: Omit<ScheduleItem, 'id'> & { id?: string }) => {
+        const id = item.id || generateUniqueId('sch');
+        const newItem: ScheduleItem = { ...item, id };
         set((state) => ({ schedule: [...state.schedule, newItem] }));
         return newItem;
       },
@@ -394,19 +325,24 @@ export const useStudyStore = create<StudyState>()(
       setSchedule: (schedule: ScheduleItem[]) => set({ schedule }),
 
       // Amigos
-      addFriend: (email: string, name?: string) => {
-        const id = generateUniqueId('fr');
+      addFriend: (email: string, name?: string, customFriend?: Partial<Friend>) => {
+        const id = customFriend?.id || generateUniqueId('fr');
         const newFriend: Friend = {
           id,
-          name: name || email.split('@')[0],
+          name: customFriend?.name || name || email.split('@')[0],
           email: email.toLowerCase().trim(),
-          streakDays: 1,
-          level: 1,
-          xp: 100,
-          equippedAnimal: 'owl',
+          streakDays: customFriend?.streakDays ?? 1,
+          level: customFriend?.level ?? 1,
+          xp: customFriend?.xp ?? 0,
+          equippedAnimal: customFriend?.equippedAnimal || 'owl',
           cheeredToday: false,
         };
-        set((state) => ({ friends: [newFriend, ...state.friends] }));
+        set((state) => ({
+          friends: [
+            newFriend,
+            ...state.friends.filter((f) => f.email.toLowerCase() !== newFriend.email),
+          ],
+        }));
         return newFriend;
       },
 
@@ -418,7 +354,7 @@ export const useStudyStore = create<StudyState>()(
 
       setFriends: (friends: Friend[]) => set({ friends }),
 
-      // Carga masiva de plantilla (Colegio o Carrera de Universidad)
+      // Carga masiva de plantilla (opcional si el usuario lo pide)
       loadCurriculumTemplate: (templates: SubjectTemplate[]) => {
         const newSubjects: Subject[] = templates.map((tmpl) => {
           const subId = generateUniqueId('sub');
@@ -481,10 +417,10 @@ export const useStudyStore = create<StudyState>()(
 
       loadDemoSubjects: () => set({ subjects: DEMO_SUBJECTS }),
       setSubjectsList: (subjects: Subject[]) => set({ subjects }),
-      resetAllSubjects: () => set({ subjects: [] }),
+      resetAllSubjects: () => set({ subjects: [], schedule: [], friends: [] }),
     }),
     {
-      name: 'misemaforo_study_storage',
+      name: 'misemaforo_study_v2',
     }
   )
 );

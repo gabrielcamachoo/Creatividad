@@ -14,7 +14,6 @@ import {
   processDayStreak,
   evaluateBadges,
 } from '@/lib/rewardEngine';
-import { soundEffects } from '@/lib/audio';
 
 interface ActionCountTracker {
   date: string;
@@ -82,14 +81,16 @@ interface GamificationState {
   resetGamification: () => void;
 }
 
+const getTodayStr = () => new Date().toISOString().split('T')[0];
+
 export const useGamificationStore = create<GamificationState>()(
   persist(
     (set, get) => ({
-      xp: 280, // Nivel 2 (Explorador) para demo viva
-      volts: 45,
-      streakDays: 5,
+      xp: 0,
+      volts: 0,
+      streakDays: 0,
       shieldsCount: 1,
-      lastActiveDate: '2026-10-28',
+      lastActiveDate: getTodayStr(),
       isStreakPaused: false,
       lastChestOpenDate: null,
 
@@ -102,17 +103,11 @@ export const useGamificationStore = create<GamificationState>()(
 
       dailyMissions: REWARDS_CONFIG.initialDailyMissions,
       weeklyMissions: REWARDS_CONFIG.initialWeeklyMissions,
-      badges: REWARDS_CONFIG.badges.map((b) => {
-        // En demo data desbloqueamos 3 insignias para que no se vea vacío
-        if (['first_review', 'speedy_60s', 'polymath'].includes(b.id)) {
-          return { ...b, unlockedAt: '2026-10-25' };
-        }
-        return b;
-      }),
+      badges: REWARDS_CONFIG.badges,
 
       userStats: {
-        totalReviews: 8,
-        challenges60sCount: 3,
+        totalReviews: 0,
+        challenges60sCount: 0,
         shopPurchasesCount: 0,
         shieldsUsedCount: 0,
         hasViewedMethodology: false,
@@ -120,7 +115,7 @@ export const useGamificationStore = create<GamificationState>()(
       },
 
       dailyActions: {
-        date: '2026-10-29',
+        date: getTodayStr(),
         createTopic: 0,
         reviewAction: 0,
         challenge60s: 0,
@@ -221,7 +216,7 @@ export const useGamificationStore = create<GamificationState>()(
 
         const isShield = item.category === 'shield';
         if (isShield && get().shieldsCount >= 2) {
-          return false; // Máximo 2 escudos almacenados
+          return false;
         }
 
         set((state) => {
@@ -284,25 +279,18 @@ export const useGamificationStore = create<GamificationState>()(
       },
 
       recordTopicReview: (currentDateStr: string, wasLowBattery: boolean) => {
-        const { dailyActions, userStats, dailyMissions, weeklyMissions } = get();
+        const { dailyActions, userStats } = get();
 
-        // Verificar límite anti-grind
         const isSameDay = dailyActions.date === currentDateStr;
         const currentActionCount = isSameDay ? dailyActions.reviewAction : 0;
         if (currentActionCount >= REWARDS_CONFIG.dailyLimits.reviewAction) {
           return;
         }
 
-        // Otorgar XP
-        const baseXP = wasLowBattery
-          ? REWARDS_CONFIG.xp.reviewLowBattery
-          : 15;
+        const baseXP = wasLowBattery ? REWARDS_CONFIG.xp.reviewLowBattery : 15;
         get().addXP(baseXP);
-
-        // Actualizar racha diaria
         get().syncStreak(currentDateStr);
 
-        // Actualizar misiones
         const updateMissionProgress = (m: Mission) => {
           if (m.category === 'reviews' && !m.completed) {
             const newCur = m.current + 1;
@@ -338,7 +326,6 @@ export const useGamificationStore = create<GamificationState>()(
           get().addXP(REWARDS_CONFIG.xp.upgradeToGreen);
         }
 
-        // Avanzar misión "Eliminando Dudas"
         set((state) => ({
           dailyMissions: state.dailyMissions.map((m) =>
             m.category === 'mastery' && !m.completed
@@ -348,7 +335,7 @@ export const useGamificationStore = create<GamificationState>()(
         }));
       },
 
-      record60sChallenge: (currentDateStr: string) => {
+      record60sChallenge: () => {
         get().addXP(REWARDS_CONFIG.xp.completeChallenge60s);
         set((state) => ({
           userStats: {
@@ -414,6 +401,13 @@ export const useGamificationStore = create<GamificationState>()(
 
       syncStreak: (currentDateStr: string) => {
         const { lastActiveDate, streakDays, shieldsCount, isStreakPaused } = get();
+        if (streakDays === 0) {
+          set({
+            streakDays: 1,
+            lastActiveDate: currentDateStr,
+          });
+          return;
+        }
         const res = processDayStreak(
           lastActiveDate,
           currentDateStr,
@@ -449,10 +443,10 @@ export const useGamificationStore = create<GamificationState>()(
           volts: 45,
           streakDays: 5,
           shieldsCount: 1,
-          lastActiveDate: '2026-10-28',
+          lastActiveDate: getTodayStr(),
           isStreakPaused: false,
-          equippedBati: { hat: undefined, aura: undefined },
-          unlockedItems: ['streak_shield'],
+          equippedBati: { hat: undefined, aura: undefined, animal: 'owl' },
+          unlockedItems: ['streak_shield', 'owl'],
           userStats: {
             totalReviews: 8,
             challenges60sCount: 3,
@@ -465,7 +459,7 @@ export const useGamificationStore = create<GamificationState>()(
           weeklyMissions: REWARDS_CONFIG.initialWeeklyMissions,
           badges: REWARDS_CONFIG.badges.map((b) =>
             ['first_review', 'speedy_60s', 'polymath'].includes(b.id)
-              ? { ...b, unlockedAt: '2026-10-25' }
+              ? { ...b, unlockedAt: getTodayStr() }
               : b
           ),
         });
@@ -477,11 +471,11 @@ export const useGamificationStore = create<GamificationState>()(
           volts: 0,
           streakDays: 0,
           shieldsCount: 1,
-          lastActiveDate: new Date().toISOString().split('T')[0],
+          lastActiveDate: getTodayStr(),
           isStreakPaused: false,
           lastChestOpenDate: null,
-          equippedBati: {},
-          unlockedItems: ['streak_shield'],
+          equippedBati: { animal: 'owl' },
+          unlockedItems: ['streak_shield', 'owl'],
           dailyMissions: REWARDS_CONFIG.initialDailyMissions,
           weeklyMissions: REWARDS_CONFIG.initialWeeklyMissions,
           badges: REWARDS_CONFIG.badges,
@@ -497,7 +491,7 @@ export const useGamificationStore = create<GamificationState>()(
       },
     }),
     {
-      name: 'semaforo_gamification_storage',
+      name: 'semaforo_gamification_v2',
     }
   )
 );

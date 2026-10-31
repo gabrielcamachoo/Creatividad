@@ -86,7 +86,7 @@ app.post('/api/auth/register', async (req, res) => {
     await dbRun(
       `INSERT INTO gamification (user_id, xp, volts, streak_days, shields_count, last_active_date, is_streak_paused, unlocked_animals, unlocked_accessories)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [userId, 100, 20, 1, 1, now.split('T')[0], 0, JSON.stringify([animal]), '[]']
+      [userId, 0, 0, 1, 1, now.split('T')[0], 0, JSON.stringify([animal]), '[]']
     );
 
     const userObj = {
@@ -251,13 +251,13 @@ app.get('/api/subjects', authenticateToken, async (req: AuthenticatedRequest, re
 app.post('/api/subjects', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.user!.id;
-    const { name, code, colorTheme, emoji, summary, examDate } = req.body;
+    const { id, name, code, colorTheme, emoji, summary, examDate } = req.body;
 
     if (!name || !name.trim()) {
       return res.status(400).json({ error: 'El nombre de la materia es obligatorio' });
     }
 
-    const subjectId = crypto.randomUUID();
+    const subjectId = id || crypto.randomUUID();
     const finalCode = (code || name.trim().substring(0, 3)).toUpperCase();
     const now = new Date().toISOString();
 
@@ -284,6 +284,50 @@ app.post('/api/subjects', authenticateToken, async (req: AuthenticatedRequest, r
   } catch (err) {
     console.error('Error al crear materia:', err);
     res.status(500).json({ error: 'Error interno al crear materia' });
+  }
+});
+
+app.post('/api/subjects/bulk-import', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const { id, subjectName, code, colorTheme, emoji, examDate, masteredTopics = [], partialTopics = [], unknownTopics = [] } = req.body;
+
+    if (!subjectName || !subjectName.trim()) {
+      return res.status(400).json({ error: 'El nombre de la materia es obligatorio' });
+    }
+
+    const subjectId = id || crypto.randomUUID();
+    const finalCode = (code || subjectName.trim().substring(0, 3)).toUpperCase();
+    const now = new Date().toISOString();
+    const dateStr = now.split('T')[0];
+
+    await dbRun(
+      `INSERT INTO subjects (id, user_id, name, code, color_theme, emoji, summary, summary_photo, exam_date, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [subjectId, userId, subjectName.trim(), finalCode, colorTheme || 'emerald', emoji || '📚', '', '', examDate || null, now]
+    );
+
+    const insertTopicGroup = async (items: Array<string | { id?: string; name: string }>, status: MasteryLevel) => {
+      for (const item of items) {
+        const tName = typeof item === 'string' ? item.trim() : item.name?.trim();
+        const tId = (typeof item === 'object' && item.id) ? item.id : crypto.randomUUID();
+        if (!tName) continue;
+        await dbRun(
+          `INSERT INTO topics (id, subject_id, user_id, name, class_date, last_reviewed_date, status, times_reviewed, summary, summary_photo, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [tId, subjectId, userId, tName, dateStr, dateStr, status, status === 'green' ? 1 : 0, '', '', now]
+        );
+      }
+    };
+
+    await insertTopicGroup(masteredTopics, 'green');
+    await insertTopicGroup(partialTopics, 'yellow');
+    await insertTopicGroup(unknownTopics, 'red');
+
+    res.status(201).json({ success: true, subjectId });
+  } catch (err) {
+    console.error('Error en bulk-import:', err);
+    res.status(500).json({ error: 'Error al importar materia con temas' });
   }
 });
 
@@ -334,7 +378,7 @@ app.post('/api/subjects/:subjectId/topics', authenticateToken, async (req: Authe
   try {
     const userId = req.user!.id;
     const { subjectId } = req.params;
-    const { name, classDate, status, summary, summaryPhoto } = req.body;
+    const { id, name, classDate, status, summary, summaryPhoto } = req.body;
 
     if (!name || !name.trim()) {
       return res.status(400).json({ error: 'El nombre del tema es obligatorio' });
@@ -345,7 +389,7 @@ app.post('/api/subjects/:subjectId/topics', authenticateToken, async (req: Authe
       return res.status(404).json({ error: 'Materia no encontrada' });
     }
 
-    const topicId = crypto.randomUUID();
+    const topicId = id || crypto.randomUUID();
     const now = new Date().toISOString();
     const dateStr = classDate || now.split('T')[0];
     const initialStatus: MasteryLevel = ['green', 'yellow', 'red'].includes(status) ? status : 'yellow';
@@ -475,13 +519,13 @@ app.get('/api/schedule', authenticateToken, async (req: AuthenticatedRequest, re
 app.post('/api/schedule', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.user!.id;
-    const { subjectId, subjectName, subjectEmoji, dayOfWeek, startTime, endTime, room } = req.body;
+    const { id: clientId, subjectId, subjectName, subjectEmoji, dayOfWeek, startTime, endTime, room } = req.body;
 
     if (!subjectName || !dayOfWeek || !startTime || !endTime) {
       return res.status(400).json({ error: 'Todos los campos de la clase son obligatorios' });
     }
 
-    const id = crypto.randomUUID();
+    const id = clientId || crypto.randomUUID();
     const now = new Date().toISOString();
 
     await dbRun(

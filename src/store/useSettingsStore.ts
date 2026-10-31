@@ -27,6 +27,8 @@ export interface UserProfile {
 }
 
 interface SettingsState {
+  isAuthenticated: boolean;
+  hasSeenOnboardingTutorial: boolean;
   activeView: AppView;
   selectedSubjectId: string | null;
   studentLevel: StudentLevel;
@@ -47,9 +49,12 @@ interface SettingsState {
   userProfile: UserProfile;
 
   // Acciones
+  setIsAuthenticated: (auth: boolean) => void;
+  setHasSeenOnboardingTutorial: (seen: boolean) => void;
   setActiveView: (view: AppView, subjectId?: string) => void;
   setStudentLevel: (level: StudentLevel) => void;
   setUserProfile: (profile: Partial<UserProfile>) => void;
+  logoutUser: () => void;
   toggleDarkMode: () => void;
   toggleSound: () => void;
   setNotificationsEnabled: (enabled: boolean) => void;
@@ -62,17 +67,30 @@ interface SettingsState {
   setIsAuthModalOpen: (open: boolean) => void;
 }
 
+const EMPTY_PROFILE: UserProfile = {
+  id: '',
+  email: '',
+  name: '',
+  studentLevel: 'school',
+  photoUrl: '',
+  careerOrGrade: '',
+  equippedAnimal: 'owl',
+  equippedAccessory: 'none',
+};
+
 export const useSettingsStore = create<SettingsState>()(
   persist(
     (set) => ({
-      activeView: 'home',
+      isAuthenticated: false,
+      hasSeenOnboardingTutorial: false,
+      activeView: 'dashboard',
       selectedSubjectId: null,
       studentLevel: 'school',
       isDarkMode: true,
       soundEnabled: false,
       notificationsEnabled: false,
       reminderTime: '19:00',
-      showPresentationDock: true,
+      showPresentationDock: false,
 
       isTutorialOpen: false,
       isBulkImportOpen: false,
@@ -80,29 +98,37 @@ export const useSettingsStore = create<SettingsState>()(
       isGraduationOpen: false,
       isAuthModalOpen: false,
 
-      userProfile: {
-        id: 'usr-demo',
-        email: 'estudiante@misemaforo.edu.co',
-        name: 'Estudiante Demo',
-        studentLevel: 'school',
-        photoUrl: '',
-        careerOrGrade: 'Bachillerato (11° Grado)',
-        equippedAnimal: 'owl',
-        equippedAccessory: 'none',
-      },
+      userProfile: EMPTY_PROFILE,
+
+      setIsAuthenticated: (auth: boolean) => set({ isAuthenticated: auth }),
+      setHasSeenOnboardingTutorial: (seen: boolean) => set({ hasSeenOnboardingTutorial: seen }),
 
       setActiveView: (view: AppView, subjectId?: string) => {
         set({
           activeView: view,
           selectedSubjectId: subjectId !== undefined ? subjectId : null,
         });
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        if (typeof window !== 'undefined') {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
       },
 
       setStudentLevel: (level: StudentLevel) => set({ studentLevel: level }),
 
       setUserProfile: (profile: Partial<UserProfile>) =>
         set((state) => ({ userProfile: { ...state.userProfile, ...profile } })),
+
+      logoutUser: () => {
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('misemaforo_token');
+        }
+        set({
+          isAuthenticated: false,
+          activeView: 'dashboard',
+          selectedSubjectId: null,
+          userProfile: EMPTY_PROFILE,
+        });
+      },
 
       toggleDarkMode: () => {
         set((state) => {
@@ -132,7 +158,7 @@ export const useSettingsStore = create<SettingsState>()(
       setIsAuthModalOpen: (open: boolean) => set({ isAuthModalOpen: open }),
     }),
     {
-      name: 'semaforo_settings_storage',
+      name: 'semaforo_settings_v2',
     }
   )
 );

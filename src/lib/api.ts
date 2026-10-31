@@ -133,6 +133,7 @@ export const api = {
   },
 
   createSubject: async (payload: {
+    id?: string;
     name: string;
     code: string;
     colorTheme?: string;
@@ -150,13 +151,15 @@ export const api = {
   },
 
   bulkImport: async (payload: {
+    id?: string;
     subjectName: string;
     code?: string;
     colorTheme?: string;
+    emoji?: string;
     examDate?: string;
-    masteredTopics: string[];
-    partialTopics: string[];
-    unknownTopics: string[];
+    masteredTopics: Array<string | { id: string; name: string }>;
+    partialTopics: Array<string | { id: string; name: string }>;
+    unknownTopics: Array<string | { id: string; name: string }>;
   }) => {
     const res = await fetch(`${API_BASE}/subjects/bulk-import`, {
       method: 'POST',
@@ -164,7 +167,6 @@ export const api = {
       body: JSON.stringify(payload),
     });
     if (!res.ok) {
-      // Fallback si no está el endpoint en vivo
       return { success: true };
     }
     return res.json();
@@ -204,6 +206,7 @@ export const api = {
   addTopic: async (
     subjectId: string,
     payload: {
+      id?: string;
       name: string;
       classDate?: string;
       status?: MasteryLevel;
@@ -269,6 +272,7 @@ export const api = {
   },
 
   addScheduleItem: async (payload: {
+    id?: string;
     subjectId?: string;
     subjectName: string;
     subjectEmoji?: string;

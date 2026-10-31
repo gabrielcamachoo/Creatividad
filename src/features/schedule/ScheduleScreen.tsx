@@ -74,9 +74,9 @@ export const ScheduleScreen: React.FC = () => {
       room: room.trim() || 'Aula asignada',
     };
 
-    addScheduleItem(payload);
+    const createdItem = addScheduleItem(payload);
     try {
-      await api.addScheduleItem(payload);
+      await api.addScheduleItem({ ...payload, id: createdItem.id });
     } catch (err) {
       console.warn('Horario guardado localmente', err);
     }
