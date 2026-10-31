@@ -1,0 +1,109 @@
+{
+  "studentProfile": {
+    "level": "university",
+    "gradeOrCareer": "Ingeniería / Pregrado",
+    "name": "Estudiante"
+  },
+  "subjects": [
+    {
+      "id": "sub-1793295483794",
+      "name": "Trigonometría",
+      "code": "MAT-10",
+      "colorTheme": "blue",
+      "icon": "BookOpen",
+      "topics": [
+        {
+          "id": "top-1793295483794-m-0",
+          "subjectId": "sub-1793295483794",
+          "name": "Pitagoras",
+          "classDate": "2026-10-29",
+          "lastReviewedDate": "2026-10-29",
+          "status": "green",
+          "timesReviewed": 1
+        },
+        {
+          "id": "top-1793295483794-m-1",
+          "subjectId": "sub-1793295483794",
+          "name": "Angulos",
+          "classDate": "2026-10-29",
+          "lastReviewedDate": "2026-10-29",
+          "status": "green",
+          "timesReviewed": 1
+        },
+        {
+          "id": "top-1793295483794-m-2",
+          "subjectId": "sub-1793295483794",
+          "name": "Hipotenusa",
+          "classDate": "2026-10-29",
+          "lastReviewedDate": "2026-10-29",
+          "status": "green",
+          "timesReviewed": 1
+        },
+        {
+          "id": "top-1793295483794-p-0",
+          "subjectId": "sub-1793295483794",
+          "name": "Coseno",
+          "classDate": "2026-10-29",
+          "lastReviewedDate": "2026-10-29",
+          "status": "yellow",
+          "timesReviewed": 0
+        },
+        {
+          "id": "top-1793295483794-p-1",
+          "subjectId": "sub-1793295483794",
+          "name": "Seno",
+          "classDate": "2026-10-29",
+          "lastReviewedDate": "2026-10-29",
+          "status": "yellow",
+          "timesReviewed": 0
+        },
+        {
+          "id": "top-1793295483794-p-2",
+          "subjectId": "sub-1793295483794",
+          "name": "Tangente",
+          "classDate": "2026-10-29",
+          "lastReviewedDate": "2026-10-29",
+          "status": "yellow",
+          "timesReviewed": 0
+        },
+        {
+          "id": "top-1793295483794-u-0",
+          "subjectId": "sub-1793295483794",
+          "name": "Arcoseno",
+          "classDate": "2026-10-29",
+          "lastReviewedDate": "2026-10-29",
+          "status": "red",
+          "timesReviewed": 0
+        },
+        {
+          "id": "top-1793295483794-u-1",
+          "subjectId": "sub-1793295483794",
+          "name": "Arcseno",
+          "classDate": "2026-10-29",
+          "lastReviewedDate": "2026-10-29",
+          "status": "red",
+          "timesReviewed": 0
+        },
+        {
+          "id": "top-1793295483794-u-2",
+          "subjectId": "sub-1793295483794",
+          "name": "Arctangete",
+          "classDate": "2026-10-29",
+          "lastReviewedDate": "2026-10-29",
+          "status": "red",
+          "timesReviewed": 0
+        }
+      ],
+      "examDate": "2026-11-20"
+    }
+  ],
+  "gamification": {
+    "xp": 280,
+    "volts": 45,
+    "streakDays": 5,
+    "shieldsCount": 1,
+    "lastActiveDate": "2026-10-29",
+    "isStreakPaused": false
+  },
+  "studyReportsGeneratedCount": 2
+}

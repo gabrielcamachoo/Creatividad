@@ -1,0 +1,76 @@
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-slate-50 text-slate-900 dark:bg-[#0b1020] dark:text-slate-100 antialiased selection:bg-emerald-500 selection:text-white min-h-screen flex flex-col font-sans;
+    background-image:
+      radial-gradient(circle at 10% 0%, rgba(16, 185, 129, 0.08), transparent 40%),
+      radial-gradient(circle at 90% 10%, rgba(139, 92, 246, 0.08), transparent 40%);
+    background-attachment: fixed;
+  }
+
+  h1, h2, h3 {
+    @apply font-display tracking-tight;
+  }
+}
+
+@layer components {
+  /* Tarjeta base del sistema de diseño */
+  .card {
+    @apply rounded-3xl bg-white/90 dark:bg-slate-900/80 border border-slate-200/80 dark:border-white/5 shadow-sm backdrop-blur;
+  }
+
+  /* Botón "juego": se hunde al presionar */
+  .btn-game {
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl font-extrabold transition-all duration-100 shadow-pop active:translate-y-[3px] active:shadow-none select-none;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-extrabold;
+  }
+
+  .shine-text {
+    background: linear-gradient(90deg, #10b981, #f59e0b, #ef4444, #10b981);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    @apply animate-shine;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.25s ease-out forwards;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Respeto a prefers-reduced-motion por accesibilidad */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
