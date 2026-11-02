@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { UNIVERSITY_TEMPLATES, CareerOption } from '@/config/curriculum.config';
+import { UNIVERSITY_TEMPLATES, PUJ_FACULTIES } from '@/config/curriculum.config';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { useStudyStore } from '@/store/useStudyStore';
 import { useGamificationStore } from '@/store/useGamificationStore';
 import { api } from '@/lib/api';
-import { X, GraduationCap, Sparkles, Check, ArrowRight, Award } from 'lucide-react';
+import { X, GraduationCap, Check, Award, Search } from 'lucide-react';
 
 interface GraduationModalProps {
   isOpen: boolean;
@@ -12,11 +12,13 @@ interface GraduationModalProps {
 }
 
 export const GraduationModal: React.FC<GraduationModalProps> = ({ isOpen, onClose }) => {
-  const { setStudentLevel, setUserProfile, userProfile } = useSettingsStore();
+  const { setStudentLevel, setUserProfile } = useSettingsStore();
   const { upgradeToUniversity } = useStudyStore();
   const { addXP, addVolts } = useGamificationStore();
 
-  const [selectedCareerId, setSelectedCareerId] = useState<string>('sistemas');
+  const [selectedCareerId, setSelectedCareerId] = useState<string>('puj_ing_sistemas');
+  const [selectedFaculty, setSelectedFaculty] = useState<string>('Todas');
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const [customCareerName, setCustomCareerName] = useState<string>('');
   const [successCelebration, setSuccessCelebration] = useState<boolean>(false);
 
@@ -86,21 +88,59 @@ export const GraduationModal: React.FC<GraduationModalProps> = ({ isOpen, onClos
             </div>
 
             <h2 className="text-xl sm:text-2xl font-heading font-black text-slate-900 dark:text-white">
-              ¡Paso a la Universidad! 🎓
+              ¡Paso a la Pontificia Universidad Javeriana! 🎓
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Selecciona tu carrera o área para adaptar tu tablero y materias base.
+              Elige cualquiera de los 47 pregrados oficiales de la PUJ (en sus 17 facultades) para cargar sus materias troncales.
             </p>
 
+            {/* Filtro rápido por facultad y búsqueda */}
+            <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Buscar carrera PUJ..."
+                  className="w-full pl-8 pr-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-semibold text-slate-900 dark:text-white"
+                />
+              </div>
+              <select
+                value={selectedFaculty}
+                onChange={(e) => setSelectedFaculty(e.target.value)}
+                aria-label="Filtrar por facultad"
+                className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold text-slate-900 dark:text-white"
+              >
+                <option value="Todas">🏛️ Todas las Facultades (17)</option>
+                {PUJ_FACULTIES.map((fac) => (
+                  <option key={fac} value={fac}>
+                    Facultad de {fac}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             {/* Selector de Carrera */}
-            <div className="mt-4 space-y-2 max-h-72 overflow-y-auto pr-1">
-              {UNIVERSITY_TEMPLATES.map((c) => {
+            <div className="mt-3 space-y-2 max-h-64 overflow-y-auto pr-1">
+              {UNIVERSITY_TEMPLATES.filter((c) => {
+                const matchesFac =
+                  selectedFaculty === 'Todas' ||
+                  c.faculty === selectedFaculty ||
+                  c.id === 'personalizada';
+                const q = searchQuery.trim().toLowerCase();
+                const matchesQ =
+                  !q ||
+                  c.name.toLowerCase().includes(q) ||
+                  c.faculty.toLowerCase().includes(q);
+                return matchesFac && matchesQ;
+              }).map((c) => {
                 const isSelected = selectedCareerId === c.id;
                 return (
                   <div
                     key={c.id}
                     onClick={() => setSelectedCareerId(c.id)}
-                    className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${
+                    className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${
                       isSelected
                         ? 'bg-purple-500/10 border-purple-500 text-purple-900 dark:text-purple-200 ring-2 ring-purple-500/20 shadow-xs'
                         : 'bg-slate-50 dark:bg-slate-800/60 border-slate-200/80 dark:border-slate-700/80 hover:border-slate-300'
@@ -115,7 +155,10 @@ export const GraduationModal: React.FC<GraduationModalProps> = ({ isOpen, onClos
                           {c.name}
                         </h4>
                         <p className="text-2.5xs text-slate-500 dark:text-slate-400 mt-0.5">
-                          {c.faculty} • {c.subjects.length > 0 ? `${c.subjects.length} materias preparadas` : 'Plan libre'}
+                          Facultad de {c.faculty} •{' '}
+                          {c.subjects.length > 0
+                            ? `${c.subjects.length} materias PUJ (${c.totalCredits || 160} créd.)`
+                            : 'Plan libre'}
                         </p>
                       </div>
                     </div>

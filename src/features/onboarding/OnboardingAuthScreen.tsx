@@ -7,6 +7,7 @@ import { useTimeStore } from '@/store/useTimeStore';
 import {
   SCHOOL_TEMPLATES,
   UNIVERSITY_TEMPLATES,
+  PUJ_FACULTIES,
   ANIMAL_COMPANIONS,
 } from '@/config/curriculum.config';
 import {
@@ -41,7 +42,8 @@ export const OnboardingAuthScreen: React.FC = () => {
     toggleDarkMode,
   } = useSettingsStore();
 
-  const { resetAllSubjects, setSubjectsList, setSchedule, setFriends } = useStudyStore();
+  const { resetAllSubjects, setSubjectsList, setSchedule, setFriends, addSubject, addTopic } =
+    useStudyStore();
   const { resetGamification, equipAnimal } = useGamificationStore();
   const { resetTime } = useTimeStore();
 
@@ -57,10 +59,11 @@ export const OnboardingAuthScreen: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
-  const [stage, setStage] = useState<'school' | 'university'>('school');
+  const [stage, setStage] = useState<'school' | 'university'>('university');
   const [selectedSchoolGrade, setSelectedSchoolGrade] = useState('school_10_11');
-  const [selectedCareer, setSelectedCareer] = useState('sistemas');
+  const [selectedCareer, setSelectedCareer] = useState('puj_ing_sistemas');
   const [customCareer, setCustomCareer] = useState('');
+  const [loadPujPensum, setLoadPujPensum] = useState(true);
   const [chosenAnimal, setChosenAnimal] = useState('owl');
   const [photoUrl, setPhotoUrl] = useState('');
   const [error, setError] = useState('');
@@ -307,11 +310,48 @@ export const OnboardingAuthScreen: React.FC = () => {
 
         localStorage.setItem('misemaforo_token', res.token);
 
-        // Empezar 100% desde cero sin materias ni datos quemados
+        // Empezar 100% desde cero sin datos falsos
         resetAllSubjects();
         resetGamification();
         resetTime();
         equipAnimal(chosenAnimal);
+
+        // Si el usuario es de Universidad Javeriana y activó cargar su pensum base (en Rojo 0%)
+        if (stage === 'university' && loadPujPensum && selectedCareer !== 'personalizada') {
+          const careerObj = UNIVERSITY_TEMPLATES.find((c) => c.id === selectedCareer);
+          if (careerObj && careerObj.subjects.length > 0) {
+            const today = new Date().toISOString().split('T')[0];
+            for (const sub of careerObj.subjects) {
+              let createdSubId = '';
+              try {
+                const bulkRes = await api.bulkImport({
+                  subjectName: sub.name,
+                  code: sub.code,
+                  colorTheme: sub.colorTheme,
+                  emoji: sub.emoji,
+                  masteredTopics: [],
+                  partialTopics: [],
+                  unknownTopics: sub.topics.map((t) => t.name),
+                });
+                createdSubId = bulkRes.subject?.id || bulkRes.subjectId || '';
+              } catch {
+                // Fallback local
+              }
+              const subId = addSubject(
+                sub.name,
+                sub.code,
+                sub.colorTheme,
+                sub.emoji,
+                sub.summary || '',
+                undefined,
+                createdSubId || undefined
+              );
+              sub.topics.forEach((t) => {
+                addTopic(subId, t.name, today, 'red', today, t.summary || '');
+              });
+            }
+          }
+        }
 
         setStudentLevel(stage);
         setUserProfile({
@@ -705,23 +745,39 @@ export const OnboardingAuthScreen: React.FC = () => {
                       </select>
                     </div>
                   ) : (
-                    <div>
+                    <div className="space-y-2">
                       <label className="block text-slate-700 dark:text-slate-300 font-bold mb-1">
-                        Carrera o facultad
+                        Carrera · Pontificia Universidad Javeriana (47 Pregrados)
                       </label>
                       <select
                         value={selectedCareer}
                         onChange={(e) => setSelectedCareer(e.target.value)}
-                        className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-semibold mb-2"
+                        aria-label="Selecciona tu carrera universitaria"
+                        className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-semibold"
                       >
-                        {UNIVERSITY_TEMPLATES.map((tmpl) => (
-                          <option key={tmpl.id} value={tmpl.id}>
-                            {tmpl.emoji} {tmpl.name}
-                          </option>
+                        {PUJ_FACULTIES.map((faculty) => (
+                          <optgroup key={faculty} label={`🏛️ Facultad de ${faculty} (PUJ)`}>
+                            {UNIVERSITY_TEMPLATES.filter((c) => c.faculty === faculty).map(
+                              (tmpl) => (
+                                <option key={tmpl.id} value={tmpl.id}>
+                                  {tmpl.emoji} {tmpl.name}
+                                </option>
+                              )
+                            )}
+                          </optgroup>
                         ))}
+                        <optgroup label="✨ Otra Carrera / Personalizada">
+                          {UNIVERSITY_TEMPLATES.filter((c) => c.id === 'personalizada').map(
+                            (tmpl) => (
+                              <option key={tmpl.id} value={tmpl.id}>
+                                {tmpl.emoji} {tmpl.name}
+                              </option>
+                            )
+                          )}
+                        </optgroup>
                       </select>
 
-                      {selectedCareer === 'personalizada' && (
+                      {selectedCareer === 'personalizada' ? (
                         <input
                           type="text"
                           placeholder="Escribe el nombre de tu carrera..."
@@ -730,6 +786,19 @@ export const OnboardingAuthScreen: React.FC = () => {
                           className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-bold"
                           required
                         />
+                      ) : (
+                        <label className="flex items-start gap-2.5 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/25 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={loadPujPensum}
+                            onChange={(e) => setLoadPujPensum(e.target.checked)}
+                            className="mt-0.5 rounded border-amber-500 text-amber-600 focus:ring-amber-500"
+                          />
+                          <span className="text-[11px] text-slate-700 dark:text-slate-200 leading-snug">
+                            <strong>Cargar materias del pensum PUJ:</strong> incluye las asignaturas troncales de tu carrera en{' '}
+                            <strong className="text-rose-500">🔴 Rojo (0% avance)</strong>, o desmarca para iniciar el tablero vacío.
+                          </span>
+                        </label>
                       )}
                     </div>
                   )}

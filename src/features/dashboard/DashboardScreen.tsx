@@ -9,10 +9,20 @@ import { BatiAvatar } from '@/components/common/BatiAvatar';
 import { TodayMissionCard } from './TodayMissionCard';
 import { SubjectWorldCard } from './SubjectWorldCard';
 import { QuickReviewModal } from './QuickReviewModal';
+import { JaverianaPensumModal } from '@/features/subject/JaverianaPensumModal';
 import { SUBJECT_EMOJI_LIST } from '@/config/curriculum.config';
 import { api } from '@/lib/api';
 import { Topic } from '@/types';
-import { Plus, FileText, GraduationCap, Calendar, X, UploadCloud, Sparkles } from 'lucide-react';
+import {
+  Plus,
+  FileText,
+  GraduationCap,
+  Calendar,
+  X,
+  UploadCloud,
+  Sparkles,
+  Building2,
+} from 'lucide-react';
 
 const COLOR_SWATCHES: Array<{ id: string; label: string; bgClass: string }> = [
   { id: 'blue', label: 'Azul', bgClass: 'bg-blue-500' },
@@ -24,6 +34,7 @@ const COLOR_SWATCHES: Array<{ id: string; label: string; bgClass: string }> = [
 
 export const DashboardScreen: React.FC = () => {
   const [isAddingSubject, setIsAddingSubject] = useState(false);
+  const [isJaverianaModalOpen, setIsJaverianaModalOpen] = useState(false);
   const [newSubName, setNewSubName] = useState('');
   const [newSubEmoji, setNewSubEmoji] = useState('📚');
   const [newSubColor, setNewSubColor] = useState('blue');
@@ -173,6 +184,12 @@ export const DashboardScreen: React.FC = () => {
               <span className="chip bg-sky-400 text-slate-900 py-0">{todayClasses.length} hoy</span>
             )}
           </button>
+          <button
+            onClick={() => setIsJaverianaModalOpen(true)}
+            className="btn-game px-4 py-2.5 text-sm bg-amber-500 hover:bg-amber-400 text-slate-950 font-heading font-black"
+          >
+            <Building2 className="w-4 h-4" /> Pensums Javeriana (47)
+          </button>
           {studentLevel === 'school' && (
             <button
               onClick={() => setIsGraduationOpen(true)}
@@ -241,7 +258,13 @@ export const DashboardScreen: React.FC = () => {
               Haz clic en cualquier materia para agregar y clasificar sus temas.
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => setIsJaverianaModalOpen(true)}
+              className="btn-game px-3.5 py-2 text-xs sm:text-sm bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 shadow-none"
+            >
+              <Building2 className="w-4 h-4" /> Catálogo PUJ (47 carreras)
+            </button>
             <button
               onClick={() => setIsBulkImportOpen(true)}
               className="btn-game px-3.5 py-2 text-xs sm:text-sm bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 shadow-none"
@@ -331,6 +354,12 @@ export const DashboardScreen: React.FC = () => {
             </div>
             <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
               <button
+                onClick={() => setIsJaverianaModalOpen(true)}
+                className="btn-game px-5 py-3 text-xs sm:text-sm bg-amber-500 hover:bg-amber-400 text-slate-950 font-heading font-black"
+              >
+                <Building2 className="w-4 h-4" /> Cargar Pensum U. Javeriana
+              </button>
+              <button
                 onClick={() => setIsAddingSubject(true)}
                 className="btn-game px-5 py-3 text-xs sm:text-sm bg-emerald-500 hover:bg-emerald-400 text-white"
               >
@@ -365,6 +394,11 @@ export const DashboardScreen: React.FC = () => {
           onClose={() => setActive60sTopic(null)}
         />
       )}
+
+      <JaverianaPensumModal
+        isOpen={isJaverianaModalOpen}
+        onClose={() => setIsJaverianaModalOpen(false)}
+      />
     </div>
   );
 };
