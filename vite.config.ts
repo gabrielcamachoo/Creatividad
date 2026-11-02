@@ -5,10 +5,23 @@ import path from 'path';
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: './', // Permite despliegue estático universal en cualquier subcarpeta (GitHub Pages, Netlify, etc.)
+  base: './',
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+    },
+  },
+  build: {
+    target: 'es2020',
+    cssCodeSplit: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom'],
+          'vendor-icons': ['lucide-react'],
+          'vendor-state': ['zustand'],
+        },
+      },
     },
   },
   server: {

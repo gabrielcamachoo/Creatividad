@@ -7,34 +7,41 @@
 @layer base {
   html {
     scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
   }
 
   body {
-    @apply bg-slate-50 text-slate-900 dark:bg-[#0b1020] dark:text-slate-100 antialiased selection:bg-emerald-500 selection:text-white min-h-screen flex flex-col font-sans;
+    @apply bg-slate-50 text-slate-900 dark:bg-[#070b16] dark:text-slate-100 antialiased selection:bg-emerald-500 selection:text-white min-h-screen flex flex-col font-sans;
     background-image:
-      radial-gradient(circle at 10% 0%, rgba(16, 185, 129, 0.08), transparent 40%),
-      radial-gradient(circle at 90% 10%, rgba(139, 92, 246, 0.08), transparent 40%);
+      radial-gradient(circle at 12% 0%, rgba(16, 185, 129, 0.11), transparent 42%),
+      radial-gradient(circle at 88% 8%, rgba(245, 158, 11, 0.07), transparent 38%),
+      radial-gradient(circle at 50% 100%, rgba(139, 92, 246, 0.08), transparent 45%);
     background-attachment: fixed;
   }
 
-  h1, h2, h3 {
+  h1, h2, h3, .font-heading {
     @apply font-display tracking-tight;
   }
 }
 
 @layer components {
-  /* Tarjeta base del sistema de diseño */
+  /* Tarjeta base del sistema de diseño con glassmorphism refinado */
   .card {
-    @apply rounded-3xl bg-white/90 dark:bg-slate-900/80 border border-slate-200/80 dark:border-white/5 shadow-sm backdrop-blur;
+    @apply rounded-3xl bg-white/95 dark:bg-slate-900/85 border border-slate-200/80 dark:border-white/[0.08] shadow-sm backdrop-blur-xl transition-all duration-200;
   }
 
-  /* Botón "juego": se hunde al presionar */
+  /* Botón táctil estilo gamificado 3D */
   .btn-game {
-    @apply inline-flex items-center justify-center gap-2 rounded-2xl font-extrabold transition-all duration-100 shadow-pop active:translate-y-[3px] active:shadow-none select-none;
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl font-extrabold transition-all duration-150 shadow-pop hover:brightness-105 active:translate-y-[3px] active:shadow-none select-none cursor-pointer disabled:opacity-50 disabled:pointer-events-none;
   }
 
   .chip {
-    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-extrabold;
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-extrabold tracking-tight;
+  }
+
+  .text-2\.5xs {
+    font-size: 0.6875rem;
+    line-height: 1rem;
   }
 
   .shine-text {
@@ -48,21 +55,80 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleUp {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes floatSlow {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
 }
 
 .animate-fade-in {
-  animation: fadeIn 0.25s ease-out forwards;
+  animation: fadeIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-scale-up {
+  animation: scaleUp 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .animate-slide-up {
-  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: slideUp 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-float {
+  animation: floatSlow 4s ease-in-out infinite;
+}
+
+/* Scrollbar sutil y moderno */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.3);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.5);
 }
 
 /* Respeto a prefers-reduced-motion por accesibilidad */

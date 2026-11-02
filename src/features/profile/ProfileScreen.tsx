@@ -10,15 +10,6 @@ import { BatiAvatar } from '@/components/common/BatiAvatar';
 import { useTimeStore } from '@/store/useTimeStore';
 import { api } from '@/lib/api';
 import {
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  CartesianGrid,
-} from 'recharts';
-import {
   Flame,
   Zap,
   Award,
@@ -334,43 +325,68 @@ export const ProfileScreen: React.FC = () => {
         totalXpThisWeek={xp}
       />
 
-      {/* Gráfica de Progreso Semanal Real */}
-      <div className="card p-5 sm:p-6 space-y-3">
-        <div className="flex items-center gap-2">
-          <TrendingUp className="w-5 h-5 text-emerald-500" />
-          <div>
-            <h3 className="font-heading font-black text-base text-slate-900 dark:text-white">
-              Tus Repasos de la Semana
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Actividad real registrada al repasar tus temas.
-            </p>
+      {/* Gráfica de Progreso Semanal Real (Ultraligera & Interactiva) */}
+      <div className="card p-5 sm:p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-10 h-10 rounded-2xl bg-emerald-500/15 text-emerald-500 grid place-items-center">
+              <TrendingUp className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-heading font-black text-base text-slate-900 dark:text-white">
+                Tus Repasos de la Semana
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Actividad real registrada al repasar tus temas día a día.
+              </p>
+            </div>
           </div>
+          <span className="chip bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+            {userStats.totalReviews} repasos totales
+          </span>
         </div>
 
-        <div className="h-56 w-full pt-3">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={weeklyHistory}>
-              <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
-              <XAxis dataKey="dayName" stroke="#94a3b8" fontSize={11} />
-              <YAxis stroke="#94a3b8" fontSize={11} allowDecimals={false} />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: '#0f172a',
-                  border: '1px solid #334155',
-                  borderRadius: '12px',
-                  fontSize: '12px',
-                  color: '#ffffff',
-                }}
-              />
-              <Bar
-                dataKey="reviewsCount"
-                name="Repasos Realizados"
-                fill="#10b981"
-                radius={[6, 6, 0, 0]}
-              />
-            </BarChart>
-          </ResponsiveContainer>
+        <div className="grid grid-cols-7 gap-2.5 sm:gap-4 items-end h-44 pt-6 px-2">
+          {weeklyHistory.map((item, idx) => {
+            const maxVal = Math.max(5, ...weeklyHistory.map((w) => w.reviewsCount));
+            const heightPct = Math.max(8, Math.round((item.reviewsCount / maxVal) * 100));
+            const isToday = idx === todayIdx;
+
+            return (
+              <div key={item.dayName} className="flex flex-col items-center gap-2 h-full justify-end group">
+                <span
+                  className={`text-[11px] font-mono font-black transition-all ${
+                    item.reviewsCount > 0
+                      ? 'text-emerald-500 scale-105'
+                      : 'text-slate-400 opacity-0 group-hover:opacity-100'
+                  }`}
+                >
+                  {item.reviewsCount}
+                </span>
+                <div className="w-full max-w-[42px] h-28 bg-slate-100 dark:bg-slate-800/80 rounded-2xl p-1 flex items-end overflow-hidden border border-slate-200/60 dark:border-white/5">
+                  <div
+                    style={{ height: `${heightPct}%` }}
+                    className={`w-full rounded-xl transition-all duration-500 ${
+                      item.reviewsCount > 0
+                        ? 'bg-gradient-to-t from-emerald-600 to-emerald-400 shadow-glow'
+                        : isToday
+                        ? 'bg-emerald-500/30'
+                        : 'bg-slate-300/50 dark:bg-slate-700/50'
+                    }`}
+                  />
+                </div>
+                <span
+                  className={`text-xs font-bold ${
+                    isToday
+                      ? 'text-emerald-600 dark:text-emerald-400 font-black'
+                      : 'text-slate-400'
+                  }`}
+                >
+                  {item.dayName}
+                </span>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>

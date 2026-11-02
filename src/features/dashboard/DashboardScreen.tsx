@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useStudyStore } from '@/store/useStudyStore';
 import { useGamificationStore } from '@/store/useGamificationStore';
 import { useTimeStore } from '@/store/useTimeStore';
@@ -12,7 +12,15 @@ import { QuickReviewModal } from './QuickReviewModal';
 import { SUBJECT_EMOJI_LIST } from '@/config/curriculum.config';
 import { api } from '@/lib/api';
 import { Topic } from '@/types';
-import { Plus, FileText, GraduationCap, Calendar, X, UploadCloud } from 'lucide-react';
+import { Plus, FileText, GraduationCap, Calendar, X, UploadCloud, Sparkles } from 'lucide-react';
+
+const COLOR_SWATCHES: Array<{ id: string; label: string; bgClass: string }> = [
+  { id: 'blue', label: 'Azul', bgClass: 'bg-blue-500' },
+  { id: 'purple', label: 'Violeta', bgClass: 'bg-purple-500' },
+  { id: 'emerald', label: 'Esmeralda', bgClass: 'bg-emerald-500' },
+  { id: 'amber', label: 'Ámbar', bgClass: 'bg-amber-500' },
+  { id: 'rose', label: 'Coral', bgClass: 'bg-rose-500' },
+];
 
 export const DashboardScreen: React.FC = () => {
   const [isAddingSubject, setIsAddingSubject] = useState(false);
@@ -36,22 +44,25 @@ export const DashboardScreen: React.FC = () => {
   } = useSettingsStore();
 
   const today = getSimulatedDateStr();
-  const bati = calculateBatiMood(subjects, today);
-  const rank = calculateRank(xp);
+  const bati = useMemo(() => calculateBatiMood(subjects, today), [subjects, today]);
+  const rank = useMemo(() => calculateRank(xp), [xp]);
 
-  let green = 0,
-    yellow = 0,
-    red = 0,
-    low = 0;
-  subjects.forEach((s) =>
-    s.topics.forEach((t) => {
-      if (t.status === 'green') green++;
-      else if (t.status === 'yellow') yellow++;
-      else red++;
-      if (calculateBatteryBlocks(t.lastReviewedDate, today).blocks <= 1) low++;
-    })
-  );
-  const total = green + yellow + red;
+  const { green, yellow, red, low, total } = useMemo(() => {
+    let g = 0,
+      y = 0,
+      r = 0,
+      l = 0;
+    subjects.forEach((s) =>
+      s.topics.forEach((t) => {
+        if (t.status === 'green') g++;
+        else if (t.status === 'yellow') y++;
+        else r++;
+        if (calculateBatteryBlocks(t.lastReviewedDate, today).blocks <= 1) l++;
+      })
+    );
+    return { green: g, yellow: y, red: r, low: l, total: g + y + r };
+  }, [subjects, today]);
+
   const pct = (n: number) => (total ? (n / total) * 100 : 0);
 
   const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
@@ -99,8 +110,9 @@ export const DashboardScreen: React.FC = () => {
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6 animate-fade-in">
       {/* HERO */}
-      <section className="relative overflow-hidden rounded-[2rem] p-6 sm:p-8 bg-gradient-to-br from-slate-900 via-slate-900 to-emerald-950 text-white">
-        <div className="absolute -right-16 -top-16 w-64 h-64 rounded-full bg-emerald-500/20 blur-3xl" />
+      <section className="relative overflow-hidden rounded-[2rem] p-6 sm:p-8 bg-gradient-to-br from-slate-900 via-[#0f172a] to-emerald-950 text-white shadow-xl border border-white/10">
+        <div className="pointer-events-none absolute -right-16 -top-16 w-64 h-64 rounded-full bg-emerald-500/20 blur-3xl" />
+        <div className="pointer-events-none absolute -left-16 -bottom-16 w-64 h-64 rounded-full bg-teal-500/10 blur-3xl" />
         <div className="relative flex flex-col sm:flex-row sm:items-center gap-5">
           <BatiAvatar
             mood={bati.mood}
@@ -109,15 +121,15 @@ export const DashboardScreen: React.FC = () => {
             size="lg"
           />
           <div className="flex-1 min-w-0">
-            <p className="text-sm text-emerald-300 font-bold">
-              ¡Hola, {firstName}! 👋{' '}
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-sm text-emerald-300 font-bold">¡Hola, {firstName}! 👋</p>
               {userProfile.careerOrGrade && (
-                <span className="text-xs text-slate-400 font-medium">
-                  · {userProfile.careerOrGrade}
+                <span className="chip bg-white/10 text-slate-200 text-[11px]">
+                  {userProfile.careerOrGrade}
                 </span>
               )}
-            </p>
-            <h1 className="text-3xl sm:text-4xl font-bold mt-1">
+            </div>
+            <h1 className="text-3xl sm:text-4xl font-bold mt-1.5">
               {subjects.length === 0
                 ? 'Empieza creando tu primera materia 🚀'
                 : red > 0
@@ -127,33 +139,34 @@ export const DashboardScreen: React.FC = () => {
             {/* Nivel */}
             <div className="mt-4 max-w-sm">
               <div className="flex justify-between text-xs font-bold text-slate-300 mb-1.5">
-                <span>
+                <span className="flex items-center gap-1">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                   Nv. {rank.level} · {rank.rank}
                 </span>
                 <span>
                   {xp} / {rank.nextLevelXP} XP
                 </span>
               </div>
-              <div className="h-3 rounded-full bg-white/10 overflow-hidden">
+              <div className="h-3 rounded-full bg-white/10 overflow-hidden p-0.5">
                 <div
                   className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-lime-300 transition-all duration-700"
-                  style={{ width: `${rank.progressPercent}%` }}
+                  style={{ width: `${Math.max(4, rank.progressPercent)}%` }}
                 />
               </div>
             </div>
           </div>
         </div>
 
-        <div className="relative mt-6 flex flex-wrap gap-2">
+        <div className="relative mt-6 flex flex-wrap gap-2.5">
           <button
             onClick={() => setActiveView('report')}
             className="btn-game px-4 py-2.5 text-sm bg-rose-500 hover:bg-rose-400 text-white"
           >
-            <FileText className="w-4 h-4" /> Mi plan
+            <FileText className="w-4 h-4" /> Mi plan de estudio
           </button>
           <button
             onClick={() => setActiveView('schedule')}
-            className="btn-game px-4 py-2.5 text-sm bg-white/10 hover:bg-white/20 text-white shadow-none"
+            className="btn-game px-4 py-2.5 text-sm bg-white/10 hover:bg-white/20 text-white shadow-none border border-white/10"
           >
             <Calendar className="w-4 h-4" /> Horario{' '}
             {todayClasses.length > 0 && (
@@ -172,29 +185,40 @@ export const DashboardScreen: React.FC = () => {
       </section>
 
       {/* SEMÁFORO GLOBAL */}
-      <section className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <section className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
         {statTiles.map((s) => (
           <div
             key={s.label}
-            className={`rounded-3xl p-4 text-white bg-gradient-to-br ${s.cls} shadow-pop`}
+            className={`rounded-3xl p-4 sm:p-5 text-white bg-gradient-to-br ${s.cls} shadow-pop hover:-translate-y-0.5 transition-transform`}
           >
             <div className="flex items-center justify-between">
               <span className="text-4xl font-display font-bold">{s.n}</span>
-              <span className="text-2xl">{s.emoji}</span>
+              <span className="text-2xl bg-white/20 w-10 h-10 rounded-2xl grid place-items-center">
+                {s.emoji}
+              </span>
             </div>
-            <p className="text-xs font-bold text-white/85 mt-1">{s.label}</p>
+            <p className="text-xs font-bold text-white/90 mt-1.5">{s.label}</p>
           </div>
         ))}
       </section>
 
       {total > 0 && (
         <div
-          className="h-3 rounded-full overflow-hidden flex bg-slate-200 dark:bg-slate-800"
+          className="h-3.5 rounded-full overflow-hidden flex bg-slate-200 dark:bg-slate-800 p-0.5 gap-0.5"
           title="Tu dominio total"
         >
-          <div className="bg-emerald-500" style={{ width: `${pct(green)}%` }} />
-          <div className="bg-amber-400" style={{ width: `${pct(yellow)}%` }} />
-          <div className="bg-rose-500" style={{ width: `${pct(red)}%` }} />
+          <div
+            className="bg-emerald-500 rounded-full transition-all duration-500"
+            style={{ width: `${pct(green)}%` }}
+          />
+          <div
+            className="bg-amber-400 rounded-full transition-all duration-500"
+            style={{ width: `${pct(yellow)}%` }}
+          />
+          <div
+            className="bg-rose-500 rounded-full transition-all duration-500"
+            style={{ width: `${pct(red)}%` }}
+          />
         </div>
       )}
 
@@ -210,8 +234,13 @@ export const DashboardScreen: React.FC = () => {
 
       {/* MATERIAS */}
       <section>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-2xl font-bold">Mis materias</h2>
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-3.5">
+          <div>
+            <h2 className="text-2xl font-bold">Mis materias</h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Haz clic en cualquier materia para agregar y clasificar sus temas.
+            </p>
+          </div>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setIsBulkImportOpen(true)}
@@ -230,8 +259,8 @@ export const DashboardScreen: React.FC = () => {
         </div>
 
         {isAddingSubject && (
-          <form onSubmit={handleCreateSubject} className="card p-4 mb-4 space-y-3 animate-fade-in">
-            <div className="flex gap-2">
+          <form onSubmit={handleCreateSubject} className="card p-5 mb-5 space-y-3.5 animate-scale-up border-2 border-emerald-500/30">
+            <div className="flex gap-2.5">
               <span className="w-12 h-12 grid place-items-center text-2xl rounded-2xl bg-slate-100 dark:bg-slate-800 shrink-0">
                 {newSubEmoji}
               </span>
@@ -259,7 +288,7 @@ export const DashboardScreen: React.FC = () => {
                   onClick={() => setNewSubEmoji(em)}
                   className={`shrink-0 w-10 h-10 rounded-xl text-xl transition ${
                     newSubEmoji === em
-                      ? 'bg-emerald-500 scale-110'
+                      ? 'bg-emerald-500 text-white scale-110 shadow-xs'
                       : 'bg-slate-100 dark:bg-slate-800 hover:scale-105'
                   }`}
                 >
@@ -267,17 +296,19 @@ export const DashboardScreen: React.FC = () => {
                 </button>
               ))}
             </div>
-            <div className="flex gap-2">
-              {['blue', 'purple', 'emerald', 'amber', 'rose'].map((c) => (
+            <div className="flex items-center gap-2.5">
+              <span className="text-xs font-bold text-slate-400">Color:</span>
+              {COLOR_SWATCHES.map((swatch) => (
                 <button
-                  key={c}
+                  key={swatch.id}
                   type="button"
-                  onClick={() => setNewSubColor(c)}
-                  aria-label={c}
-                  className={`w-7 h-7 rounded-full bg-${c}-500 ${
-                    newSubColor === c
-                      ? 'ring-4 ring-offset-2 ring-slate-300 dark:ring-offset-slate-900'
-                      : ''
+                  onClick={() => setNewSubColor(swatch.id)}
+                  aria-label={swatch.label}
+                  title={swatch.label}
+                  className={`w-7 h-7 rounded-full transition-transform ${swatch.bgClass} ${
+                    newSubColor === swatch.id
+                      ? 'ring-4 ring-offset-2 ring-slate-300 dark:ring-offset-slate-900 scale-110'
+                      : 'opacity-75 hover:opacity-100'
                   }`}
                 />
               ))}
@@ -287,7 +318,9 @@ export const DashboardScreen: React.FC = () => {
 
         {subjects.length === 0 ? (
           <div className="card p-8 sm:p-12 text-center border-dashed border-2 border-slate-300 dark:border-slate-800 space-y-4">
-            <span className="text-5xl block">📚</span>
+            <div className="w-16 h-16 rounded-3xl bg-emerald-500/10 border border-emerald-500/20 grid place-items-center text-4xl mx-auto animate-float">
+              📚
+            </div>
             <div>
               <h3 className="font-display font-bold text-xl text-slate-900 dark:text-white">
                 Tu tablero está limpio y listo desde cero
