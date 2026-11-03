@@ -20,6 +20,8 @@ import {
   Target,
   BookOpen,
   LogOut,
+  Brain,
+  Search,
 } from 'lucide-react';
 
 const ANIMAL_EMOJIS: Record<string, string> = {
@@ -66,7 +68,11 @@ const XpRing: React.FC<{ percent: number; children: React.ReactNode }> = ({ perc
   );
 };
 
-export const Navbar: React.FC = () => {
+interface NavbarProps {
+  onOpenCommandPalette?: () => void;
+}
+
+export const Navbar: React.FC<NavbarProps> = ({ onOpenCommandPalette }) => {
   const {
     activeView,
     setActiveView,
@@ -84,12 +90,13 @@ export const Navbar: React.FC = () => {
 
   const tabs: { view: AppView; label: string; icon: React.ElementType }[] = [
     { view: 'dashboard', label: 'Tablero', icon: Home },
+    { view: 'focus', label: 'Estudio', icon: Brain },
     { view: 'schedule', label: 'Horario', icon: Calendar },
-    { view: 'report', label: 'Plan', icon: FileText },
     { view: 'rewards', label: 'Premios', icon: Gift },
     { view: 'profile', label: 'Perfil', icon: User },
   ];
   const extra: { view: AppView; label: string; icon: React.ElementType }[] = [
+    { view: 'report', label: 'Plan', icon: FileText },
     { view: 'prioritizer', label: 'Priorizador', icon: Target },
     { view: 'methodology', label: 'Cómo nació', icon: BookOpen },
   ];
@@ -146,6 +153,20 @@ export const Navbar: React.FC = () => {
           </nav>
 
           <div className="flex items-center gap-1.5 sm:gap-2 ml-auto lg:ml-0">
+            {onOpenCommandPalette && (
+              <button
+                type="button"
+                onClick={onOpenCommandPalette}
+                className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-slate-200/70 dark:hover:bg-white/10 text-xs font-bold text-slate-500 dark:text-slate-400 border border-slate-200/70 dark:border-white/10 transition-colors"
+                title="Buscar materia, tema o acción (Ctrl+K)"
+              >
+                <Search className="w-3.5 h-3.5 text-emerald-500" />
+                <span>Buscar</span>
+                <kbd className="px-1.5 py-0.5 rounded bg-white dark:bg-slate-800 text-[10px] font-mono text-slate-400 border border-slate-200 dark:border-slate-700">
+                  Ctrl+K
+                </kbd>
+              </button>
+            )}
             <span
               className="chip bg-orange-500/10 text-orange-600 dark:text-orange-400"
               title={`Racha de ${streakDays} días`}

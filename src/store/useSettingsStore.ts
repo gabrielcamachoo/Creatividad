@@ -5,6 +5,7 @@ export type AppView =
   | 'home'
   | 'dashboard'
   | 'subject'
+  | 'focus'
   | 'schedule'
   | 'prioritizer'
   | 'rewards'

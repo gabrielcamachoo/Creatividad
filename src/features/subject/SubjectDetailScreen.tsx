@@ -9,6 +9,7 @@ import { SubjectSummaryModal } from './SubjectSummaryModal';
 import { QuickReviewModal } from '../dashboard/QuickReviewModal';
 import { SemaforoAssistantBanner } from '@/components/common/SemaforoAssistantBanner';
 import { MasteryLevel, Topic, Subject } from '@/types';
+import { soundEngine } from '@/lib/soundEffects';
 import { api } from '@/lib/api';
 import {
   ArrowLeft,
@@ -20,8 +21,8 @@ import {
   AlertTriangle,
   XCircle,
   Calendar,
-  Layers,
-  Sparkles,
+  Brain,
+  Search,
 } from 'lucide-react';
 
 export const SubjectDetailScreen: React.FC = () => {
@@ -46,6 +47,8 @@ export const SubjectDetailScreen: React.FC = () => {
   const [active60sTopic, setActive60sTopic] = useState<Topic | null>(null);
   const [summaryModalTopic, setSummaryModalTopic] = useState<Topic | null>(null);
   const [isSubjectConfigOpen, setIsSubjectConfigOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<'ALL' | MasteryLevel>('ALL');
+  const [topicSearch, setTopicSearch] = useState('');
 
   const currentDateStr = getSimulatedDateStr();
   const subject = subjects.find((s) => s.id === selectedSubjectId);
@@ -107,6 +110,8 @@ export const SubjectDetailScreen: React.FC = () => {
   };
 
   const handleStatusChange = async (topicId: string, newStatus: MasteryLevel) => {
+    if (newStatus === 'green') soundEngine.playSuccessChime();
+    else soundEngine.playPop();
     const res = updateTopicStatus(subject.id, topicId, newStatus);
     if (res) {
       recordStatusChange(res.oldStatus, res.newStatus);
@@ -118,6 +123,7 @@ export const SubjectDetailScreen: React.FC = () => {
   };
 
   const handleSaveSummary = async (topicId: string, summaryText: string, photoUrl?: string) => {
+    soundEngine.playSuccessChime();
     updateTopicSummary(subject.id, topicId, summaryText, photoUrl);
     addXP(15);
     try {
@@ -126,6 +132,7 @@ export const SubjectDetailScreen: React.FC = () => {
   };
 
   const handleReview = async (topicId: string, wasLowBattery: boolean) => {
+    soundEngine.playSuccessChime();
     reviewTopicToday(subject.id, topicId, currentDateStr);
     recordTopicReview(currentDateStr, wasLowBattery);
     checkAndAwardBadges(subjects, currentDateStr);
@@ -208,6 +215,15 @@ export const SubjectDetailScreen: React.FC = () => {
 
           {/* Botones de acción rápida */}
           <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => setActiveView('focus', subject.id)}
+              className="btn-game px-3.5 py-2 rounded-2xl text-xs font-heading font-black bg-indigo-600 hover:bg-indigo-500 text-white flex items-center gap-1.5"
+              title="Estudiar esta materia con Pomodoro, Flashcards 3D y Feynman"
+            >
+              <Brain className="w-4 h-4" />
+              <span>Flashcards & Pomodoro</span>
+            </button>
+
             <button
               onClick={() => setIsSubjectConfigOpen(true)}
               className="btn-game px-3.5 py-2 rounded-2xl text-xs font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 flex items-center gap-1.5"
@@ -431,20 +447,68 @@ export const SubjectDetailScreen: React.FC = () => {
           </button>
         </div>
       ) : (
-        <div className="space-y-3">
-          {subject.topics.map((top) => (
-            <TopicRow
-              key={top.id}
-              topic={top}
-              subjectName={subject.name}
-              currentDateStr={currentDateStr}
-              onUpdateStatus={handleStatusChange}
-              onReviewToday={handleReview}
-              onOpenChallenge60s={(t) => setActive60sTopic(t)}
-              onOpenSummary={(t) => setSummaryModalTopic(t)}
-              onDeleteTopic={handleDeleteTopic}
-            />
-          ))}
+        <div className="space-y-4">
+          {/* Barra de filtro por estado de Semáforo y buscador de temas */}
+          <div className="flex flex-wrap items-center justify-between gap-2.5">
+            <div className="flex flex-wrap items-center gap-1.5">
+              {[
+                { id: 'ALL', label: `Todos (${totalTopics})` },
+                { id: 'red', label: `🔴 Rojos (${redCount})` },
+                { id: 'yellow', label: `🟡 Amarillos (${yellowCount})` },
+                { id: 'green', label: `🟢 Verdes (${greenCount})` },
+              ].map((pill) => (
+                <button
+                  key={pill.id}
+                  type="button"
+                  onClick={() => setStatusFilter(pill.id as 'ALL' | MasteryLevel)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-heading font-black border transition-all ${
+                    statusFilter === pill.id
+                      ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-transparent shadow-xs'
+                      : 'bg-white dark:bg-slate-900 text-slate-500 border-slate-200 dark:border-slate-800 hover:border-slate-300'
+                  }`}
+                >
+                  {pill.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+              <input
+                type="text"
+                value={topicSearch}
+                onChange={(e) => setTopicSearch(e.target.value)}
+                placeholder="Buscar tema..."
+                className="pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            {subject.topics
+              .filter((top) => {
+                const matchesStatus = statusFilter === 'ALL' || top.status === statusFilter;
+                const q = topicSearch.trim().toLowerCase();
+                const matchesSearch =
+                  !q ||
+                  top.name.toLowerCase().includes(q) ||
+                  (top.summary || '').toLowerCase().includes(q);
+                return matchesStatus && matchesSearch;
+              })
+              .map((top) => (
+                <TopicRow
+                  key={top.id}
+                  topic={top}
+                  subjectName={subject.name}
+                  currentDateStr={currentDateStr}
+                  onUpdateStatus={handleStatusChange}
+                  onReviewToday={handleReview}
+                  onOpenChallenge60s={(t) => setActive60sTopic(t)}
+                  onOpenSummary={(t) => setSummaryModalTopic(t)}
+                  onDeleteTopic={handleDeleteTopic}
+                />
+              ))}
+          </div>
         </div>
       )}
 

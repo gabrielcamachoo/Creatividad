@@ -7,10 +7,12 @@ import { calculateBatiMood, calculateRank } from '@/lib/rewardEngine';
 import { calculateBatteryBlocks } from '@/lib/studyEngine';
 import { BatiAvatar } from '@/components/common/BatiAvatar';
 import { TodayMissionCard } from './TodayMissionCard';
+import { DailyQuestsChestCard } from './DailyQuestsChestCard';
 import { SubjectWorldCard } from './SubjectWorldCard';
 import { QuickReviewModal } from './QuickReviewModal';
 import { JaverianaPensumModal } from '@/features/subject/JaverianaPensumModal';
 import { SUBJECT_EMOJI_LIST } from '@/config/curriculum.config';
+import { soundEngine } from '@/lib/soundEffects';
 import { api } from '@/lib/api';
 import { Topic } from '@/types';
 import {
@@ -22,6 +24,8 @@ import {
   UploadCloud,
   Sparkles,
   Building2,
+  Brain,
+  Search,
 } from 'lucide-react';
 
 const COLOR_SWATCHES: Array<{ id: string; label: string; bgClass: string }> = [
@@ -35,6 +39,7 @@ const COLOR_SWATCHES: Array<{ id: string; label: string; bgClass: string }> = [
 export const DashboardScreen: React.FC = () => {
   const [isAddingSubject, setIsAddingSubject] = useState(false);
   const [isJaverianaModalOpen, setIsJaverianaModalOpen] = useState(false);
+  const [subjectSearch, setSubjectSearch] = useState('');
   const [newSubName, setNewSubName] = useState('');
   const [newSubEmoji, setNewSubEmoji] = useState('📚');
   const [newSubColor, setNewSubColor] = useState('blue');
@@ -103,6 +108,7 @@ export const DashboardScreen: React.FC = () => {
   };
 
   const handleReviewQuick = async (subjectId: string, topicId: string, wasLow: boolean) => {
+    soundEngine.playSuccessChime();
     reviewTopicToday(subjectId, topicId, today);
     recordTopicReview(today, wasLow);
     checkAndAwardBadges(subjects, today);
@@ -169,6 +175,12 @@ export const DashboardScreen: React.FC = () => {
         </div>
 
         <div className="relative mt-6 flex flex-wrap gap-2.5">
+          <button
+            onClick={() => setActiveView('focus')}
+            className="btn-game px-4 py-2.5 text-sm bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-heading font-black shadow-glow"
+          >
+            <Brain className="w-4 h-4" /> Modo Estudio (Pomodoro & Flashcards)
+          </button>
           <button
             onClick={() => setActiveView('report')}
             className="btn-game px-4 py-2.5 text-sm bg-rose-500 hover:bg-rose-400 text-white"
@@ -239,6 +251,9 @@ export const DashboardScreen: React.FC = () => {
         </div>
       )}
 
+      {/* MISIONES DIARIAS & COFRE DE ENGAGEMENT */}
+      <DailyQuestsChestCard subjects={subjects} todayStr={today} />
+
       {/* MISIÓN */}
       {subjects.length > 0 && (
         <TodayMissionCard
@@ -259,6 +274,18 @@ export const DashboardScreen: React.FC = () => {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            {subjects.length > 3 && (
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+                <input
+                  type="text"
+                  value={subjectSearch}
+                  onChange={(e) => setSubjectSearch(e.target.value)}
+                  placeholder="Filtrar materias..."
+                  className="pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+            )}
             <button
               onClick={() => setIsJaverianaModalOpen(true)}
               className="btn-game px-3.5 py-2 text-xs sm:text-sm bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 shadow-none"
@@ -375,14 +402,21 @@ export const DashboardScreen: React.FC = () => {
           </div>
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {subjects.map((s) => (
-              <SubjectWorldCard
-                key={s.id}
-                subject={s}
-                currentDateStr={today}
-                onOpenSubject={(id) => setActiveView('subject', id)}
-              />
-            ))}
+            {subjects
+              .filter(
+                (s) =>
+                  !subjectSearch.trim() ||
+                  s.name.toLowerCase().includes(subjectSearch.toLowerCase()) ||
+                  s.code.toLowerCase().includes(subjectSearch.toLowerCase())
+              )
+              .map((s) => (
+                <SubjectWorldCard
+                  key={s.id}
+                  subject={s}
+                  currentDateStr={today}
+                  onOpenSubject={(id) => setActiveView('subject', id)}
+                />
+              ))}
           </div>
         )}
       </section>

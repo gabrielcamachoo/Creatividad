@@ -1,10 +1,11 @@
-import React, { Suspense, lazy, useEffect } from 'react';
+import React, { Suspense, lazy, useEffect, useState } from 'react';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { useStudyStore } from '@/store/useStudyStore';
 import { api } from '@/lib/api';
 import { Navbar } from '@/components/common/Navbar';
 import { LevelUpModal } from '@/components/common/LevelUpModal';
 import { BadgeUnlockedToast } from '@/components/common/BadgeUnlockedToast';
+import { CommandPaletteModal } from '@/components/common/CommandPaletteModal';
 import { OnboardingAuthScreen } from '@/features/onboarding/OnboardingAuthScreen';
 import { DashboardScreen } from '@/features/dashboard/DashboardScreen';
 
@@ -14,6 +15,9 @@ const HomeScreen = lazy(() =>
 );
 const SubjectDetailScreen = lazy(() =>
   import('@/features/subject/SubjectDetailScreen').then((m) => ({ default: m.SubjectDetailScreen }))
+);
+const FocusArenaScreen = lazy(() =>
+  import('@/features/focus/FocusArenaScreen').then((m) => ({ default: m.FocusArenaScreen }))
 );
 const ScheduleScreen = lazy(() =>
   import('@/features/schedule/ScheduleScreen').then((m) => ({ default: m.ScheduleScreen }))
@@ -81,6 +85,19 @@ export const App: React.FC = () => {
   } = useSettingsStore();
 
   const { setSubjectsList, setSchedule, setFriends } = useStudyStore();
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+
+  // Atajo global Ctrl+K / Cmd+K para abrir el buscador rápido
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setIsCommandPaletteOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   useEffect(() => {
     if (isDarkMode) {
@@ -117,6 +134,8 @@ export const App: React.FC = () => {
         return <DashboardScreen />;
       case 'subject':
         return <SubjectDetailScreen />;
+      case 'focus':
+        return <FocusArenaScreen />;
       case 'schedule':
         return <ScheduleScreen />;
       case 'prioritizer':
@@ -138,7 +157,7 @@ export const App: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-[#070b16] text-slate-900 dark:text-slate-100 transition-colors duration-200">
-      <Navbar />
+      <Navbar onOpenCommandPalette={() => setIsCommandPaletteOpen(true)} />
 
       <main className="flex-1 pb-24">
         <Suspense fallback={<ViewFallback />}>{renderActiveView()}</Suspense>
@@ -148,10 +167,10 @@ export const App: React.FC = () => {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-2">
           <p className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
             <span>🚦</span>
-            <span>MiSemáforo · Semáforo + Batería de 7 Días</span>
+            <span>MiSemáforo · Semáforo + Batería de 7 Días + Estudio Activo</span>
           </p>
           <p className="text-slate-400">
-            Colegio y Universidad · Repaso Espaciado Inteligente
+            Colegio & Pontificia Universidad Javeriana (47 Pregrados) · Ctrl+K para buscar
           </p>
         </div>
       </footer>
@@ -159,6 +178,10 @@ export const App: React.FC = () => {
       {/* Modales globales cargados bajo demanda */}
       <LevelUpModal />
       <BadgeUnlockedToast />
+      <CommandPaletteModal
+        isOpen={isCommandPaletteOpen}
+        onClose={() => setIsCommandPaletteOpen(false)}
+      />
       <Suspense fallback={null}>
         {isBulkImportOpen && <BulkImportModal />}
         {isMotivationOpen && (
