@@ -46,6 +46,7 @@ export const JaverianaPensumModal: React.FC<JaverianaPensumModalProps> = ({
   const [selectedFaculty, setSelectedFaculty] = useState<string>('Todas');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [activeCareerId, setActiveCareerId] = useState<string>(initialCareer.id);
+  const [selectedSemester, setSelectedSemester] = useState<number | 'ALL'>('ALL');
   const [importingId, setImportingId] = useState<string | null>(null);
   const [importedCodes, setImportedCodes] = useState<Record<string, boolean>>({});
   const [feedbackMsg, setFeedbackMsg] = useState<string>('');
@@ -129,12 +130,17 @@ export const JaverianaPensumModal: React.FC<JaverianaPensumModalProps> = ({
     }
   };
 
-  const handleImportFullCareer = async (career: CareerOption) => {
+  const handleImportFullCareer = async (career: CareerOption, onlySemester?: number | 'ALL') => {
     setImportingId('ALL');
     let addedCount = 0;
 
+    const targetSubjects =
+      onlySemester && onlySemester !== 'ALL'
+        ? career.subjects.filter((s) => s.semester === onlySemester)
+        : career.subjects;
+
     try {
-      for (const sub of career.subjects) {
+      for (const sub of targetSubjects) {
         if (isSubjectAlreadyAdded(sub)) continue;
         let createdSubId = '';
         try {
@@ -174,25 +180,33 @@ export const JaverianaPensumModal: React.FC<JaverianaPensumModalProps> = ({
       setStudentLevel('university');
       setUserProfile({
         studentLevel: 'university',
-        careerOrGrade: `${career.name} · PUJ`,
+        careerOrGrade: `${career.name} · PUJ Bogotá`,
       });
       try {
         await api.updateProfile({
           studentLevel: 'university',
-          careerOrGrade: `${career.name} · PUJ`,
+          careerOrGrade: `${career.name} · PUJ Bogotá`,
         });
       } catch {}
 
       setFeedbackMsg(
         addedCount > 0
-          ? `🎓 Se cargaron ${addedCount} materias del pensum de ${career.name} (PUJ).`
-          : `✨ Ya tienes todas las materias de ${career.name} en tu tablero.`
+          ? `🎓 Se cargaron ${addedCount} asignaturas con sus unidades de Syllabus de ${career.name} (PUJ Sede Bogotá).`
+          : `✨ Ya tienes estas asignaturas de ${career.name} en tu tablero.`
       );
       setTimeout(() => setFeedbackMsg(''), 4500);
     } finally {
       setImportingId(null);
     }
   };
+
+  const availableSemesters = Array.from(
+    new Set((activeCareer?.subjects || []).map((s) => s.semester || 1))
+  ).sort((a, b) => a - b);
+
+  const visibleSubjects = (activeCareer?.subjects || [])
+    .filter((s) => selectedSemester === 'ALL' || (s.semester || 1) === selectedSemester)
+    .sort((a, b) => (a.semester || 1) - (b.semester || 1));
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/70 backdrop-blur-sm animate-fade-in overflow-y-auto">
@@ -287,7 +301,10 @@ export const JaverianaPensumModal: React.FC<JaverianaPensumModalProps> = ({
                     <button
                       key={career.id}
                       type="button"
-                      onClick={() => setActiveCareerId(career.id)}
+                      onClick={() => {
+                        setActiveCareerId(career.id);
+                        setSelectedSemester('ALL');
+                      }}
                       className={`w-full p-2.5 rounded-xl text-left transition-all flex items-center justify-between gap-2 ${
                         isSelected
                           ? 'bg-amber-500/15 border border-amber-500/40 text-slate-900 dark:text-white shadow-xs'
@@ -345,21 +362,52 @@ export const JaverianaPensumModal: React.FC<JaverianaPensumModalProps> = ({
                   <button
                     type="button"
                     disabled={importingId === 'ALL'}
-                    onClick={() => handleImportFullCareer(activeCareer)}
+                    onClick={() => handleImportFullCareer(activeCareer, selectedSemester)}
                     className="btn-game px-4 py-2.5 rounded-2xl text-xs font-heading font-black text-white bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 shadow-xs shrink-0"
                   >
                     <Layers className="w-4 h-4" />
                     <span>
                       {importingId === 'ALL'
-                        ? 'Cargando pensum...'
-                        : 'Cargar todo el pensum'}
+                        ? 'Cargando asignaturas...'
+                        : selectedSemester === 'ALL'
+                        ? `Cargar Pensum Completo (${activeCareer.subjects.length})`
+                        : `Cargar Semestre ${selectedSemester} (${visibleSubjects.length})`}
                     </span>
                   </button>
                 </div>
 
+                {/* Barra de filtro por Semestre */}
+                <div className="px-4 py-2.5 border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/50 flex items-center gap-1.5 overflow-x-auto">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedSemester('ALL')}
+                    className={`px-3 py-1 rounded-xl text-[11px] font-heading font-black shrink-0 transition-all ${
+                      selectedSemester === 'ALL'
+                        ? 'bg-amber-500 text-slate-950 shadow-xs'
+                        : 'bg-white dark:bg-slate-800 text-slate-500 border border-slate-200 dark:border-slate-700'
+                    }`}
+                  >
+                    Todos ({activeCareer.subjects.length})
+                  </button>
+                  {availableSemesters.map((sem) => (
+                    <button
+                      key={sem}
+                      type="button"
+                      onClick={() => setSelectedSemester(sem)}
+                      className={`px-3 py-1 rounded-xl text-[11px] font-heading font-black shrink-0 transition-all ${
+                        selectedSemester === sem
+                          ? 'bg-amber-500 text-slate-950 shadow-xs'
+                          : 'bg-white dark:bg-slate-800 text-slate-500 border border-slate-200 dark:border-slate-700'
+                      }`}
+                    >
+                      Sem. {sem}
+                    </button>
+                  ))}
+                </div>
+
                 {/* Lista de materias del pensum */}
                 <div className="flex-1 overflow-y-auto p-3.5 space-y-3 max-h-80 md:max-h-none">
-                  {activeCareer.subjects.map((sub) => {
+                  {visibleSubjects.map((sub) => {
                     const alreadyAdded = isSubjectAlreadyAdded(sub);
                     return (
                       <div
