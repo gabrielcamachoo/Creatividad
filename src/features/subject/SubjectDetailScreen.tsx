@@ -8,7 +8,8 @@ import { TopicSummaryModal } from './TopicSummaryModal';
 import { SubjectSummaryModal } from './SubjectSummaryModal';
 import { QuickReviewModal } from '../dashboard/QuickReviewModal';
 import { SemaforoAssistantBanner } from '@/components/common/SemaforoAssistantBanner';
-import { MasteryLevel, Topic, Subject } from '@/types';
+import { MasteryLevel, Topic, Subject, SubjectAcademicStatus } from '@/types';
+import { UNIVERSITY_TEMPLATES, SubjectTemplate } from '@/config/curriculum.config';
 import { soundEngine } from '@/lib/soundEffects';
 import { api } from '@/lib/api';
 import {
@@ -23,6 +24,10 @@ import {
   Calendar,
   Brain,
   Search,
+  Award,
+  PauseCircle,
+  RotateCcw,
+  ArrowLeftRight,
 } from 'lucide-react';
 
 export const SubjectDetailScreen: React.FC = () => {
@@ -36,6 +41,9 @@ export const SubjectDetailScreen: React.FC = () => {
     reviewTopicToday,
     deleteSubject,
     updateSubject,
+    setSubjectAcademicStatus,
+    retakeSubject,
+    replaceSubjectWithTemplate,
   } = useStudyStore();
   const { recordTopicReview, recordStatusChange, checkAndAwardBadges, addXP } = useGamificationStore();
   const { getSimulatedDateStr } = useTimeStore();
@@ -49,6 +57,9 @@ export const SubjectDetailScreen: React.FC = () => {
   const [isSubjectConfigOpen, setIsSubjectConfigOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<'ALL' | MasteryLevel>('ALL');
   const [topicSearch, setTopicSearch] = useState('');
+  const [gradeInput, setGradeInput] = useState('4.2');
+  const [isSwapPanelOpen, setIsSwapPanelOpen] = useState(false);
+  const [swapSearch, setSwapSearch] = useState('');
 
   const currentDateStr = getSimulatedDateStr();
   const subject = subjects.find((s) => s.id === selectedSubjectId);
@@ -165,6 +176,68 @@ export const SubjectDetailScreen: React.FC = () => {
     } catch {}
   };
 
+  const currentAcademicStatus: SubjectAcademicStatus = subject.academicStatus || 'enrolled';
+
+  const handleSetAcademicStatus = (
+    status: SubjectAcademicStatus,
+    grade?: number,
+    note?: string,
+    markGreen = false
+  ) => {
+    if (status === 'passed') {
+      soundEngine.playSuccessChime();
+      addXP(45);
+    } else {
+      soundEngine.playPop();
+    }
+    setSubjectAcademicStatus(subject.id, status, {
+      finalGrade: grade,
+      statusNote: note,
+      markAllTopicsGreen: markGreen,
+    });
+  };
+
+  const handleRetake = (mode: 'keep_green' | 'reset_all_red') => {
+    soundEngine.playSuccessChime();
+    retakeSubject(
+      subject.id,
+      mode,
+      `Re-inscrita (Intento #${(subject.attemptCount || 1) + 1})`
+    );
+    addXP(20);
+  };
+
+  const handleSwapWithTemplate = (tpl: SubjectTemplate) => {
+    soundEngine.playSuccessChime();
+    replaceSubjectWithTemplate(subject.id, tpl, 'enrolled');
+    setIsSwapPanelOpen(false);
+    setSwapSearch('');
+  };
+
+  // Lista rápida de materias PUJ para reemplazo cuando se abre el panel de cambio
+  const matchingPujTemplates: Array<{ careerName: string; subject: SubjectTemplate }> =
+    isSwapPanelOpen
+      ? UNIVERSITY_TEMPLATES.flatMap((c) =>
+          c.subjects.map((s) => ({ careerName: c.name, subject: s }))
+        )
+          .filter((item, idx, arr) => {
+            const q = swapSearch.trim().toLowerCase();
+            const matchesQuery =
+              !q ||
+              item.subject.name.toLowerCase().includes(q) ||
+              item.subject.code.toLowerCase().includes(q) ||
+              item.careerName.toLowerCase().includes(q);
+            const isUnique =
+              arr.findIndex(
+                (other) =>
+                  other.subject.code === item.subject.code &&
+                  other.subject.name === item.subject.name
+              ) === idx;
+            return matchesQuery && isUnique;
+          })
+          .slice(0, 12)
+      : [];
+
   return (
     <div className="py-6 sm:py-8 max-w-5xl mx-auto px-4 sm:px-6 space-y-6 animate-fade-in text-left">
       {/* Botón Volver */}
@@ -188,6 +261,16 @@ export const SubjectDetailScreen: React.FC = () => {
                 <span className="font-mono text-xs font-bold px-2.5 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
                   {subject.code}
                 </span>
+                {subject.semester && (
+                  <span className="chip bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
+                    Sem. {subject.semester} · {subject.credits || 3} cr.
+                  </span>
+                )}
+                {(subject.attemptCount || 1) > 1 && (
+                  <span className="chip bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+                    🔄 {subject.attemptCount}ª vez (Repetición)
+                  </span>
+                )}
                 {subject.examDate && (
                   <span className="chip bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
                     <Calendar className="w-3 h-3" />
@@ -271,6 +354,205 @@ export const SubjectDetailScreen: React.FC = () => {
                 className="bg-rose-500 rounded-full transition-all duration-500"
                 title={`${redCount} vacíos`}
               />
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* PANEL DE CICLO ACADÉMICO SEMESTRAL: Pasada, Retirada, Perdida, Volver a ver o Cambiar Materia */}
+      <div className="card p-5 border border-slate-200/80 dark:border-slate-800 space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 block">
+              Estado Académico en tu Semestre
+            </span>
+            <p className="text-xs text-slate-600 dark:text-slate-300 font-medium mt-0.5">
+              {currentAcademicStatus === 'enrolled' &&
+                '📘 Cursando actualmente. Si ya la aprobaste, la retiraste a mitad de semestre o la perdiste, cámbialo aquí:'}
+              {currentAcademicStatus === 'passed' &&
+                `✅ Materia Aprobada / Pasada${
+                  typeof subject.finalGrade === 'number'
+                    ? ` con nota definitiva ${subject.finalGrade.toFixed(1)}`
+                    : ''
+                }. Todos sus temas cuentan como dominados.`}
+              {currentAcademicStatus === 'withdrawn' &&
+                '⏸️ Materia retirada a mitad de semestre. No genera alertas diarias hasta que decidas volver a verla.'}
+              {currentAcademicStatus === 'failed' &&
+                '❌ Materia marcada como perdida. Puedes volver a inscribirla este semestre conservando tus temas verdes o desde cero.'}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setIsSwapPanelOpen(!isSwapPanelOpen)}
+            className="btn-game px-3.5 py-2 rounded-xl text-xs font-heading font-black bg-amber-500/15 hover:bg-amber-500/25 text-amber-700 dark:text-amber-300 border border-amber-500/30 flex items-center gap-1.5"
+          >
+            <ArrowLeftRight className="w-3.5 h-3.5" />
+            <span>{isSwapPanelOpen ? 'Cerrar cambio de materia' : 'Cambiar por otra materia del Pensum'}</span>
+          </button>
+        </div>
+
+        {/* Botones de Estado Académico */}
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => handleSetAcademicStatus('enrolled', undefined, 'Cursando en el semestre actual', false)}
+            className={`px-3.5 py-2 rounded-xl text-xs font-heading font-black border transition-all ${
+              currentAcademicStatus === 'enrolled'
+                ? 'bg-sky-500 text-white border-sky-500 shadow-xs'
+                : 'bg-slate-50 dark:bg-slate-800/70 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+            }`}
+          >
+            📘 Cursando ahora
+          </button>
+
+          <div className="inline-flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-1 pr-2">
+            <button
+              type="button"
+              onClick={() =>
+                handleSetAcademicStatus(
+                  'passed',
+                  Number(gradeInput) || 4.2,
+                  'Materia aprobada y homologada en historial',
+                  true
+                )
+              }
+              className={`px-3 py-1.5 rounded-lg text-xs font-heading font-black flex items-center gap-1 transition-all ${
+                currentAcademicStatus === 'passed'
+                  ? 'bg-emerald-500 text-white shadow-xs'
+                  : 'text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20'
+              }`}
+            >
+              <Award className="w-3.5 h-3.5" />
+              <span>✅ Marcar Ya Pasada</span>
+            </button>
+            <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300">Nota:</span>
+            <input
+              type="number"
+              min="3.0"
+              max="5.0"
+              step="0.1"
+              value={gradeInput}
+              onChange={(e) => setGradeInput(e.target.value)}
+              className="w-14 px-1.5 py-0.5 rounded-md bg-white dark:bg-slate-900 border border-emerald-500/30 text-xs font-black text-emerald-700 dark:text-emerald-300 text-center"
+              aria-label="Nota definitiva"
+            />
+          </div>
+
+          <button
+            type="button"
+            onClick={() =>
+              handleSetAcademicStatus(
+                'withdrawn',
+                undefined,
+                'Retirada a mitad de semestre — pendiente por volver a ver',
+                false
+              )
+            }
+            className={`px-3.5 py-2 rounded-xl text-xs font-heading font-black border flex items-center gap-1.5 transition-all ${
+              currentAcademicStatus === 'withdrawn'
+                ? 'bg-amber-500 text-slate-950 border-amber-500 shadow-xs'
+                : 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/25 hover:bg-amber-500/20'
+            }`}
+          >
+            <PauseCircle className="w-3.5 h-3.5" />
+            <span>⏸️ Retirar (Mitad de semestre)</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() =>
+              handleSetAcademicStatus(
+                'failed',
+                2.4,
+                'Materia perdida — lista para repetir y desquitarse',
+                false
+              )
+            }
+            className={`px-3.5 py-2 rounded-xl text-xs font-heading font-black border flex items-center gap-1.5 transition-all ${
+              currentAcademicStatus === 'failed'
+                ? 'bg-rose-500 text-white border-rose-500 shadow-xs'
+                : 'bg-rose-500/10 text-rose-600 dark:text-rose-300 border-rose-500/25 hover:bg-rose-500/20'
+            }`}
+          >
+            <XCircle className="w-3.5 h-3.5" />
+            <span>❌ Marcar como Perdida</span>
+          </button>
+        </div>
+
+        {/* Banner de Re-inscripción cuando está Retirada o Perdida */}
+        {(currentAcademicStatus === 'withdrawn' || currentAcademicStatus === 'failed') && (
+          <div className="p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h4 className="text-xs font-heading font-black text-indigo-700 dark:text-indigo-300 flex items-center gap-1.5">
+                <RotateCcw className="w-4 h-4" />
+                <span>¿Vas a volver a ver {subject.name} este semestre?</span>
+              </h4>
+              <p className="text-[11px] text-slate-600 dark:text-slate-300 mt-0.5">
+                Elige si quieres conservar en 🟢 Verde los temas que ya habías aprendido antes de retirarla/perderla, o reiniciar todo desde 🔴 Rojo.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => handleRetake('keep_green')}
+                className="btn-game px-3.5 py-2 rounded-xl text-xs font-heading font-black bg-indigo-600 hover:bg-indigo-500 text-white"
+              >
+                🔄 Volver a ver (Conservar mis 🟢 Verdes)
+              </button>
+              <button
+                type="button"
+                onClick={() => handleRetake('reset_all_red')}
+                className="btn-game px-3.5 py-2 rounded-xl text-xs font-heading font-black bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
+              >
+                Reiniciar todo en 🔴 Rojo
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Buscador para Cambiar / Reemplazar esta materia por otra del Pensum Javeriana */}
+        {isSwapPanelOpen && (
+          <div className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/30 space-y-3 animate-scale-up">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h4 className="text-xs font-heading font-black text-amber-700 dark:text-amber-300">
+                  🔀 Cambiar o reemplazar "{subject.name}" por otra asignatura del Pensum PUJ
+                </h4>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  Ideal si cambiaste de electiva o ajustaste tu horario después de importar el semestre.
+                </p>
+              </div>
+              <input
+                type="text"
+                value={swapSearch}
+                onChange={(e) => setSwapSearch(e.target.value)}
+                placeholder="Buscar materia (ej. Cálculo, Énfasis, Constitución, Bioética)..."
+                className="w-full sm:w-72 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-amber-500/30 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 max-h-56 overflow-y-auto pr-1">
+              {matchingPujTemplates.map((item) => (
+                <button
+                  key={`${item.careerName}-${item.subject.code}-${item.subject.name}`}
+                  type="button"
+                  onClick={() => handleSwapWithTemplate(item.subject)}
+                  className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-amber-500 text-left transition-all flex items-center justify-between gap-2"
+                >
+                  <div className="min-w-0">
+                    <span className="text-xs font-heading font-black text-slate-900 dark:text-white block truncate">
+                      {item.subject.emoji} {item.subject.name}
+                    </span>
+                    <span className="text-[10px] text-slate-400 block truncate">
+                      {item.subject.code} · Sem. {item.subject.semester} · {item.careerName}
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-black text-amber-600 dark:text-amber-400 shrink-0">
+                    Reemplazar →
+                  </span>
+                </button>
+              ))}
             </div>
           </div>
         )}

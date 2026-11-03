@@ -1,5 +1,14 @@
 export type MasteryLevel = 'green' | 'yellow' | 'red';
 
+/**
+ * Estado académico de una materia en la vida universitaria:
+ * - 'enrolled': Cursando actualmente en el semestre activo
+ * - 'passed': Aprobada / Homologada en un semestre pasado (nota >= 3.0)
+ * - 'withdrawn': Retirada a mitad de semestre (para volver a ver después)
+ * - 'failed': Perdida / Reprobada (nota < 3.0, pendiente por repetir)
+ */
+export type SubjectAcademicStatus = 'enrolled' | 'passed' | 'withdrawn' | 'failed';
+
 export interface Topic {
   id: string;
   subjectId: string;
@@ -23,6 +32,12 @@ export interface Subject {
   summaryPhoto?: string;      // Foto de temario / mapa conceptual
   topics: Topic[];
   examDate?: string;          // Para el Modo Parcial
+  academicStatus?: SubjectAcademicStatus; // Estado: cursando, aprobada, retirada, perdida
+  semester?: number;          // Semestre del pensum (1 a 12)
+  credits?: number;           // Créditos académicos (ej. 3)
+  finalGrade?: number;        // Nota definitiva o proyectada (0.0 a 5.0)
+  attemptCount?: number;      // Número de vez que la cursa (1 = 1ª vez, 2 = repetición, etc.)
+  statusNote?: string;        // Motivo de retiro, periodo intersemestral o comentario
 }
 
 export interface ScheduleItem {

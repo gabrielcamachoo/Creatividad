@@ -14,7 +14,7 @@ import { JaverianaPensumModal } from '@/features/subject/JaverianaPensumModal';
 import { SUBJECT_EMOJI_LIST } from '@/config/curriculum.config';
 import { soundEngine } from '@/lib/soundEffects';
 import { api } from '@/lib/api';
-import { Topic } from '@/types';
+import { Topic, SubjectAcademicStatus } from '@/types';
 import {
   Plus,
   FileText,
@@ -26,6 +26,8 @@ import {
   Building2,
   Brain,
   Search,
+  Award,
+  RotateCcw,
 } from 'lucide-react';
 
 const COLOR_SWATCHES: Array<{ id: string; label: string; bgClass: string }> = [
@@ -40,6 +42,9 @@ export const DashboardScreen: React.FC = () => {
   const [isAddingSubject, setIsAddingSubject] = useState(false);
   const [isJaverianaModalOpen, setIsJaverianaModalOpen] = useState(false);
   const [subjectSearch, setSubjectSearch] = useState('');
+  const [academicFilter, setAcademicFilter] = useState<
+    'enrolled' | 'withdrawn_or_failed' | 'passed' | 'ALL'
+  >('enrolled');
   const [newSubName, setNewSubName] = useState('');
   const [newSubEmoji, setNewSubEmoji] = useState('📚');
   const [newSubColor, setNewSubColor] = useState('blue');
@@ -48,8 +53,15 @@ export const DashboardScreen: React.FC = () => {
     subjectName: string;
   } | null>(null);
 
-  const { subjects, addSubject, reviewTopicToday, schedule } = useStudyStore();
-  const { xp, equippedBati, recordTopicReview, checkAndAwardBadges } = useGamificationStore();
+  const {
+    subjects,
+    addSubject,
+    reviewTopicToday,
+    schedule,
+    setSubjectAcademicStatus,
+    retakeSubject,
+  } = useStudyStore();
+  const { xp, equippedBati, recordTopicReview, checkAndAwardBadges, addXP } = useGamificationStore();
   const { getSimulatedDateStr } = useTimeStore();
   const {
     setActiveView,
@@ -63,12 +75,48 @@ export const DashboardScreen: React.FC = () => {
   const bati = useMemo(() => calculateBatiMood(subjects, today), [subjects, today]);
   const rank = useMemo(() => calculateRank(xp), [xp]);
 
+  const academicSummary = useMemo(() => {
+    const enrolled = subjects.filter((s) => (s.academicStatus || 'enrolled') === 'enrolled');
+    const passed = subjects.filter((s) => s.academicStatus === 'passed');
+    const withdrawnOrFailed = subjects.filter(
+      (s) => s.academicStatus === 'withdrawn' || s.academicStatus === 'failed'
+    );
+    const enrolledCredits = enrolled.reduce((acc, s) => acc + (s.credits || 3), 0);
+    const passedCredits = passed.reduce((acc, s) => acc + (s.credits || 3), 0);
+
+    const gradedSubjects = subjects.filter(
+      (s) =>
+        (s.academicStatus === 'passed' || s.academicStatus === 'failed') &&
+        typeof s.finalGrade === 'number'
+    );
+    const totalGradedCredits = gradedSubjects.reduce((acc, s) => acc + (s.credits || 3), 0);
+    const weightedGradeSum = gradedSubjects.reduce(
+      (acc, s) => acc + (s.finalGrade || 0) * (s.credits || 3),
+      0
+    );
+    const pga =
+      totalGradedCredits > 0 ? Number((weightedGradeSum / totalGradedCredits).toFixed(2)) : null;
+
+    return {
+      enrolledCount: enrolled.length,
+      passedCount: passed.length,
+      withdrawnOrFailedCount: withdrawnOrFailed.length,
+      enrolledCredits,
+      passedCredits,
+      pga,
+    };
+  }, [subjects]);
+
   const { green, yellow, red, low, total } = useMemo(() => {
     let g = 0,
       y = 0,
       r = 0,
       l = 0;
-    subjects.forEach((s) =>
+    const activeSubjects = subjects.filter(
+      (s) => (s.academicStatus || 'enrolled') === 'enrolled'
+    );
+    const targetList = activeSubjects.length > 0 ? activeSubjects : subjects;
+    targetList.forEach((s) =>
       s.topics.forEach((t) => {
         if (t.status === 'green') g++;
         else if (t.status === 'yellow') y++;
@@ -115,6 +163,32 @@ export const DashboardScreen: React.FC = () => {
     try {
       await api.reviewTopic(topicId, today);
     } catch {}
+  };
+
+  const handleQuickStatusChange = (
+    subjectId: string,
+    status: SubjectAcademicStatus,
+    grade?: number,
+    note?: string
+  ) => {
+    if (status === 'passed') {
+      soundEngine.playSuccessChime();
+      addXP(45);
+    } else {
+      soundEngine.playPop();
+    }
+    setSubjectAcademicStatus(subjectId, status, {
+      finalGrade: grade,
+      statusNote: note,
+      markAllTopicsGreen: status === 'passed',
+    });
+  };
+
+  const handleRetakeSubject = (subjectId: string) => {
+    soundEngine.playSuccessChime();
+    retakeSubject(subjectId, 'keep_green', 'Re-inscrita para repetir y aprobar este semestre');
+    addXP(20);
+    setAcademicFilter('enrolled');
   };
 
   const statTiles = [
@@ -266,11 +340,69 @@ export const DashboardScreen: React.FC = () => {
 
       {/* MATERIAS */}
       <section>
+        {/* Resumen Académico y PGA Universitario */}
+        {subjects.length > 0 && (
+          <div className="card p-4 sm:p-5 mb-4 bg-gradient-to-r from-slate-900 via-slate-900 to-indigo-950 text-white border border-white/10">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-400/30 grid place-items-center text-amber-300 shrink-0">
+                  <Award className="w-5 h-5" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-black uppercase tracking-wider text-amber-300 block">
+                    Historial & Ciclo Académico Semestral
+                  </span>
+                  <p className="text-xs text-slate-300">
+                    Gestiona materias cursando, ya aprobadas, retiradas a mitad de semestre o perdidas para volver a verlas.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                <div className="px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-center">
+                  <span className="text-[10px] text-slate-400 font-bold block">Cursando</span>
+                  <span className="text-xs font-heading font-black text-sky-300">
+                    {academicSummary.enrolledCount} mat. ({academicSummary.enrolledCredits} cr.)
+                  </span>
+                </div>
+                <div className="px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-center">
+                  <span className="text-[10px] text-emerald-300/80 font-bold block">Aprobadas</span>
+                  <span className="text-xs font-heading font-black text-emerald-300">
+                    {academicSummary.passedCount} mat. ({academicSummary.passedCredits} cr.)
+                  </span>
+                </div>
+                {academicSummary.withdrawnOrFailedCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setAcademicFilter('withdrawn_or_failed')}
+                    className="px-3 py-1.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-center transition-colors"
+                  >
+                    <span className="text-[10px] text-rose-300 font-bold block flex items-center gap-1">
+                      <RotateCcw className="w-2.5 h-2.5" /> Por repetir
+                    </span>
+                    <span className="text-xs font-heading font-black text-rose-200">
+                      {academicSummary.withdrawnOrFailedCount} mat.
+                    </span>
+                  </button>
+                )}
+                {academicSummary.pga !== null && (
+                  <div className="px-3.5 py-1.5 rounded-xl bg-amber-500/20 border border-amber-400/40 text-center">
+                    <span className="text-[10px] text-amber-200 font-bold block">PGA Acumulado</span>
+                    <span className="text-sm font-display font-black text-amber-300">
+                      {academicSummary.pga.toFixed(2)} / 5.0
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="flex flex-wrap items-center justify-between gap-2 mb-3.5">
           <div>
             <h2 className="text-2xl font-bold">Mis materias</h2>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Haz clic en cualquier materia para agregar y clasificar sus temas.
+              Cambia el estado de cualquier materia: apruébala con nota, retírala a mitad de semestre o vuelve a inscribirla.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -307,6 +439,43 @@ export const DashboardScreen: React.FC = () => {
             </button>
           </div>
         </div>
+
+        {/* Pestañas de Ciclo Académico */}
+        {subjects.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 mb-4">
+            {[
+              {
+                id: 'enrolled' as const,
+                label: `📘 Cursando este semestre (${academicSummary.enrolledCount})`,
+              },
+              {
+                id: 'withdrawn_or_failed' as const,
+                label: `⏸️ Retiradas / Perdidas por repetir (${academicSummary.withdrawnOrFailedCount})`,
+              },
+              {
+                id: 'passed' as const,
+                label: `✅ Materias Ya Pasadas (${academicSummary.passedCount})`,
+              },
+              {
+                id: 'ALL' as const,
+                label: `📚 Todas (${subjects.length})`,
+              },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setAcademicFilter(tab.id)}
+                className={`px-3.5 py-2 rounded-2xl text-xs font-heading font-black border transition-all ${
+                  academicFilter === tab.id
+                    ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-transparent shadow-xs'
+                    : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:border-slate-300'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        )}
 
         {isAddingSubject && (
           <form onSubmit={handleCreateSubject} className="card p-5 mb-5 space-y-3.5 animate-scale-up border-2 border-emerald-500/30">
@@ -401,23 +570,65 @@ export const DashboardScreen: React.FC = () => {
             </div>
           </div>
         ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {subjects
-              .filter(
-                (s) =>
-                  !subjectSearch.trim() ||
-                  s.name.toLowerCase().includes(subjectSearch.toLowerCase()) ||
-                  s.code.toLowerCase().includes(subjectSearch.toLowerCase())
-              )
-              .map((s) => (
-                <SubjectWorldCard
-                  key={s.id}
-                  subject={s}
-                  currentDateStr={today}
-                  onOpenSubject={(id) => setActiveView('subject', id)}
-                />
-              ))}
-          </div>
+          (() => {
+            const filteredSubjects = subjects.filter((s) => {
+              const st = s.academicStatus || 'enrolled';
+              const matchesTab =
+                academicFilter === 'ALL'
+                  ? true
+                  : academicFilter === 'enrolled'
+                  ? st === 'enrolled'
+                  : academicFilter === 'passed'
+                  ? st === 'passed'
+                  : st === 'withdrawn' || st === 'failed';
+              const matchesSearch =
+                !subjectSearch.trim() ||
+                s.name.toLowerCase().includes(subjectSearch.toLowerCase()) ||
+                s.code.toLowerCase().includes(subjectSearch.toLowerCase());
+              return matchesTab && matchesSearch;
+            });
+
+            if (filteredSubjects.length === 0) {
+              return (
+                <div className="card p-8 text-center border border-dashed border-slate-300 dark:border-slate-800 space-y-3">
+                  <p className="text-sm font-heading font-black text-slate-700 dark:text-slate-200">
+                    No tienes materias en esta pestaña ({academicFilter === 'enrolled' ? 'Cursando' : academicFilter === 'passed' ? 'Aprobadas' : 'Retiradas / Perdidas'}).
+                  </p>
+                  <div className="flex flex-wrap justify-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setAcademicFilter('ALL')}
+                      className="btn-game px-4 py-2 text-xs bg-slate-900 dark:bg-white text-white dark:text-slate-900"
+                    >
+                      Ver todas mis materias ({subjects.length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsJaverianaModalOpen(true)}
+                      className="btn-game px-4 py-2 text-xs bg-amber-500 text-slate-950 font-heading font-black"
+                    >
+                      + Importar del Pensum Javeriana
+                    </button>
+                  </div>
+                </div>
+              );
+            }
+
+            return (
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredSubjects.map((s) => (
+                  <SubjectWorldCard
+                    key={s.id}
+                    subject={s}
+                    currentDateStr={today}
+                    onOpenSubject={(id) => setActiveView('subject', id)}
+                    onQuickStatusChange={handleQuickStatusChange}
+                    onRetakeSubject={handleRetakeSubject}
+                  />
+                ))}
+              </div>
+            );
+          })()
         )}
       </section>
 

@@ -1,6 +1,13 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { Subject, MasteryLevel, Topic, ScheduleItem, Friend } from '@/types';
+import {
+  Subject,
+  MasteryLevel,
+  Topic,
+  ScheduleItem,
+  Friend,
+  SubjectAcademicStatus,
+} from '@/types';
 import { DEMO_SUBJECTS } from '@/data/demoData';
 import { SubjectTemplate, CareerOption } from '@/config/curriculum.config';
 
@@ -24,12 +31,39 @@ interface StudyState {
     emoji?: string,
     summary?: string,
     examDate?: string,
-    customId?: string
+    customId?: string,
+    meta?: {
+      academicStatus?: SubjectAcademicStatus;
+      semester?: number;
+      credits?: number;
+      finalGrade?: number;
+      attemptCount?: number;
+      statusNote?: string;
+    }
   ) => string;
   updateSubject: (
     subjectId: string,
     updates: Partial<Omit<Subject, 'id' | 'topics'>>
   ) => void;
+  setSubjectAcademicStatus: (
+    subjectId: string,
+    academicStatus: SubjectAcademicStatus,
+    options?: {
+      finalGrade?: number;
+      statusNote?: string;
+      markAllTopicsGreen?: boolean;
+    }
+  ) => void;
+  retakeSubject: (
+    subjectId: string,
+    mode?: 'keep_green' | 'reset_all_red',
+    statusNote?: string
+  ) => void;
+  replaceSubjectWithTemplate: (
+    oldSubjectId: string,
+    newTemplate: SubjectTemplate,
+    academicStatus?: SubjectAcademicStatus
+  ) => string;
   deleteSubject: (subjectId: string) => void;
 
   // Temas
@@ -103,7 +137,15 @@ export const useStudyStore = create<StudyState>()(
         emoji: string = '📚',
         summary: string = '',
         examDate?: string,
-        customId?: string
+        customId?: string,
+        meta?: {
+          academicStatus?: SubjectAcademicStatus;
+          semester?: number;
+          credits?: number;
+          finalGrade?: number;
+          attemptCount?: number;
+          statusNote?: string;
+        }
       ) => {
         const id = customId || generateUniqueId('sub');
         const newSubject: Subject = {
@@ -117,6 +159,12 @@ export const useStudyStore = create<StudyState>()(
           icon: 'BookOpen',
           topics: [],
           examDate,
+          academicStatus: meta?.academicStatus || 'enrolled',
+          semester: meta?.semester,
+          credits: meta?.credits ?? 3,
+          finalGrade: meta?.finalGrade,
+          attemptCount: meta?.attemptCount ?? 1,
+          statusNote: meta?.statusNote,
         };
         set((state) => ({ subjects: [...state.subjects, newSubject] }));
         return id;
@@ -128,6 +176,119 @@ export const useStudyStore = create<StudyState>()(
             sub.id === subjectId ? { ...sub, ...updates } : sub
           ),
         }));
+      },
+
+      setSubjectAcademicStatus: (
+        subjectId: string,
+        academicStatus: SubjectAcademicStatus,
+        options?: {
+          finalGrade?: number;
+          statusNote?: string;
+          markAllTopicsGreen?: boolean;
+        }
+      ) => {
+        const today = new Date().toISOString().split('T')[0];
+        set((state) => ({
+          subjects: state.subjects.map((sub) => {
+            if (sub.id !== subjectId) return sub;
+            const shouldMarkGreen =
+              academicStatus === 'passed' && options?.markAllTopicsGreen !== false;
+            return {
+              ...sub,
+              academicStatus,
+              finalGrade:
+                options?.finalGrade !== undefined ? options.finalGrade : sub.finalGrade,
+              statusNote:
+                options?.statusNote !== undefined ? options.statusNote : sub.statusNote,
+              topics: shouldMarkGreen
+                ? sub.topics.map((t) => ({
+                    ...t,
+                    status: 'green' as MasteryLevel,
+                    lastReviewedDate: today,
+                    timesReviewed: Math.max(1, t.timesReviewed),
+                  }))
+                : sub.topics,
+            };
+          }),
+        }));
+      },
+
+      retakeSubject: (
+        subjectId: string,
+        mode: 'keep_green' | 'reset_all_red' = 'keep_green',
+        statusNote?: string
+      ) => {
+        const today = new Date().toISOString().split('T')[0];
+        set((state) => ({
+          subjects: state.subjects.map((sub) => {
+            if (sub.id !== subjectId) return sub;
+            const nextAttempt = (sub.attemptCount || 1) + 1;
+            return {
+              ...sub,
+              academicStatus: 'enrolled',
+              attemptCount: nextAttempt,
+              finalGrade: undefined,
+              statusNote:
+                statusNote ||
+                `Cursando por ${nextAttempt}ª vez (re-inscrita el ${today})`,
+              topics: sub.topics.map((t) => ({
+                ...t,
+                status:
+                  mode === 'reset_all_red'
+                    ? 'red'
+                    : t.status === 'green'
+                    ? 'green'
+                    : 'red',
+                lastReviewedDate: today,
+              })),
+            };
+          }),
+        }));
+      },
+
+      replaceSubjectWithTemplate: (
+        oldSubjectId: string,
+        newTemplate: SubjectTemplate,
+        academicStatus: SubjectAcademicStatus = 'enrolled'
+      ) => {
+        const newSubId = generateUniqueId('sub');
+        const today = new Date().toISOString().split('T')[0];
+        const isPassed = academicStatus === 'passed';
+
+        const replacementSubject: Subject = {
+          id: newSubId,
+          name: newTemplate.name,
+          code: newTemplate.code,
+          colorTheme: newTemplate.colorTheme,
+          emoji: newTemplate.emoji,
+          summary: newTemplate.summary || '',
+          summaryPhoto: '',
+          icon: 'BookOpen',
+          academicStatus,
+          semester: newTemplate.semester,
+          credits: newTemplate.credits ?? 3,
+          attemptCount: 1,
+          finalGrade: isPassed ? 4.0 : undefined,
+          topics: newTemplate.topics.map((t) => ({
+            id: generateUniqueId('top'),
+            subjectId: newSubId,
+            name: t.name,
+            classDate: today,
+            lastReviewedDate: today,
+            status: isPassed ? 'green' : 'red',
+            timesReviewed: isPassed ? 2 : 0,
+            summary: t.summary || '',
+            summaryPhoto: '',
+          })),
+        };
+
+        set((state) => ({
+          subjects: state.subjects.map((s) =>
+            s.id === oldSubjectId ? replacementSubject : s
+          ),
+        }));
+
+        return newSubId;
       },
 
       deleteSubject: (subjectId: string) => {

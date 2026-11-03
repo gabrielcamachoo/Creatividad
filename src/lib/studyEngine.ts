@@ -45,6 +45,14 @@ export function calculatePrioritizedTopics(subjects: Subject[], currentDate: str
   const prioritized: PrioritizedTopic[] = [];
 
   for (const subject of subjects) {
+    // Si hay varias materias, solo priorizar en el día a día las que están cursándose activamente ('enrolled')
+    if (
+      subjects.length > 1 &&
+      subject.academicStatus &&
+      subject.academicStatus !== 'enrolled'
+    ) {
+      continue;
+    }
     for (const topic of subject.topics) {
       const { blocks, daysSinceReview, isAtRisk } = calculateBatteryBlocks(topic.lastReviewedDate, currentDate);
 
