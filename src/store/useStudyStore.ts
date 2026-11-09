@@ -7,6 +7,7 @@ import {
   ScheduleItem,
   Friend,
   SubjectAcademicStatus,
+  GradeCut,
 } from '@/types';
 import { DEMO_SUBJECTS } from '@/data/demoData';
 import { SubjectTemplate, CareerOption } from '@/config/curriculum.config';
@@ -65,6 +66,11 @@ interface StudyState {
     academicStatus?: SubjectAcademicStatus
   ) => string;
   deleteSubject: (subjectId: string) => void;
+  updateGradeCuts: (
+    subjectId: string,
+    gradeCuts: GradeCut[],
+    targetGrade?: number
+  ) => void;
 
   // Temas
   addTopic: (
@@ -294,6 +300,34 @@ export const useStudyStore = create<StudyState>()(
       deleteSubject: (subjectId: string) => {
         set((state) => ({
           subjects: state.subjects.filter((s) => s.id !== subjectId),
+        }));
+      },
+
+      updateGradeCuts: (
+        subjectId: string,
+        gradeCuts: GradeCut[],
+        targetGrade?: number
+      ) => {
+        set((state) => ({
+          subjects: state.subjects.map((s) => {
+            if (s.id !== subjectId) return s;
+            // Calcular nota final ponderada si todos los cortes están llenos o estimar
+            const totalWeight = gradeCuts.reduce((acc, c) => acc + c.percentage, 0);
+            const weightedSum = gradeCuts.reduce(
+              (acc, c) => acc + (c.grade !== undefined ? c.grade * (c.percentage / 100) : 0),
+              0
+            );
+            const isFullyGraded = gradeCuts.every((c) => c.grade !== undefined);
+
+            return {
+              ...s,
+              gradeCuts,
+              targetGrade: targetGrade ?? s.targetGrade ?? 3.0,
+              finalGrade: isFullyGraded
+                ? Number((totalWeight > 0 ? (weightedSum / (totalWeight / 100)) : weightedSum).toFixed(2))
+                : s.finalGrade,
+            };
+          }),
         }));
       },
 

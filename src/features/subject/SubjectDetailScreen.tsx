@@ -28,7 +28,11 @@ import {
   PauseCircle,
   RotateCcw,
   ArrowLeftRight,
+  Calculator,
+  Printer,
 } from 'lucide-react';
+import { GradeCalculatorModal } from './GradeCalculatorModal';
+import { printSubjectCheatsheet } from '@/lib/pdfExport';
 
 export const SubjectDetailScreen: React.FC = () => {
   const { selectedSubjectId, setActiveView } = useSettingsStore();
@@ -44,7 +48,9 @@ export const SubjectDetailScreen: React.FC = () => {
     setSubjectAcademicStatus,
     retakeSubject,
     replaceSubjectWithTemplate,
+    updateGradeCuts,
   } = useStudyStore();
+  const { userProfile } = useSettingsStore();
   const { recordTopicReview, recordStatusChange, checkAndAwardBadges, addXP } = useGamificationStore();
   const { getSimulatedDateStr } = useTimeStore();
 
@@ -55,6 +61,7 @@ export const SubjectDetailScreen: React.FC = () => {
   const [active60sTopic, setActive60sTopic] = useState<Topic | null>(null);
   const [summaryModalTopic, setSummaryModalTopic] = useState<Topic | null>(null);
   const [isSubjectConfigOpen, setIsSubjectConfigOpen] = useState(false);
+  const [isGradeCalcOpen, setIsGradeCalcOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<'ALL' | MasteryLevel>('ALL');
   const [topicSearch, setTopicSearch] = useState('');
   const [gradeInput, setGradeInput] = useState('4.2');
@@ -298,6 +305,24 @@ export const SubjectDetailScreen: React.FC = () => {
 
           {/* Botones de acción rápida */}
           <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => setIsGradeCalcOpen(true)}
+              className="btn-game px-3.5 py-2 rounded-2xl text-xs font-heading font-black bg-amber-500/15 hover:bg-amber-500/25 text-amber-700 dark:text-amber-300 border border-amber-500/30 flex items-center gap-1.5"
+              title="Calcular notas de cortes y nota necesaria para el examen final"
+            >
+              <Calculator className="w-4 h-4" />
+              <span>Simular Cortes & Notas</span>
+            </button>
+
+            <button
+              onClick={() => printSubjectCheatsheet(subject, userProfile?.name || 'Estudiante')}
+              className="btn-game px-3.5 py-2 rounded-2xl text-xs font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 flex items-center gap-1.5"
+              title="Generar Ficha de Estudio / Hoja de Fórmulas imprimible en PDF"
+            >
+              <Printer className="w-4 h-4" />
+              <span>Ficha PDF</span>
+            </button>
+
             <button
               onClick={() => setActiveView('focus', subject.id)}
               className="btn-game px-3.5 py-2 rounded-2xl text-xs font-heading font-black bg-indigo-600 hover:bg-indigo-500 text-white flex items-center gap-1.5"
@@ -822,6 +847,16 @@ export const SubjectDetailScreen: React.FC = () => {
           isOpen={isSubjectConfigOpen}
           onClose={() => setIsSubjectConfigOpen(false)}
           onSave={handleUpdateSubject}
+        />
+      )}
+
+      {/* Modal Simulador de Cortes & Notas */}
+      {isGradeCalcOpen && (
+        <GradeCalculatorModal
+          subject={subject}
+          isOpen={isGradeCalcOpen}
+          onClose={() => setIsGradeCalcOpen(false)}
+          onSave={(cuts, target) => updateGradeCuts(subject.id, cuts, target)}
         />
       )}
     </div>

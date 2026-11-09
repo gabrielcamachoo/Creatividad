@@ -21,6 +21,13 @@ export interface Topic {
   summaryPhoto?: string;      // Foto del apunte / diagrama (Base64)
 }
 
+export interface GradeCut {
+  id: string;
+  name: string;        // "Corte 1", "Parcial 2", "Quices y Talleres", "Examen Final"
+  percentage: number;  // 30, 35, 40 etc. (la suma suele dar 100%)
+  grade?: number;      // Nota obtenida (0.0 a 5.0) o undefined si aún no se ha presentado
+}
+
 export interface Subject {
   id: string;
   name: string;
@@ -36,6 +43,8 @@ export interface Subject {
   semester?: number;          // Semestre del pensum (1 a 12)
   credits?: number;           // Créditos académicos (ej. 3)
   finalGrade?: number;        // Nota definitiva o proyectada (0.0 a 5.0)
+  gradeCuts?: GradeCut[];     // Cortes del semestre (Corte 1, Corte 2, Final, etc.)
+  targetGrade?: number;       // Meta del estudiante (ej. 3.0 para pasar, 4.5 para beca)
   attemptCount?: number;      // Número de vez que la cursa (1 = 1ª vez, 2 = repetición, etc.)
   statusNote?: string;        // Motivo de retiro, periodo intersemestral o comentario
 }

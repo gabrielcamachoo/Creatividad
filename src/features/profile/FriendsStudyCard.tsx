@@ -2,7 +2,9 @@ import React, { useState } from 'react';
 import { useStudyStore } from '@/store/useStudyStore';
 import { useGamificationStore } from '@/store/useGamificationStore';
 import { api } from '@/lib/api';
-import { Users, UserPlus, Flame, Zap, Check, Mail } from 'lucide-react';
+import { Users, UserPlus, Flame, Zap, Check, Mail, Swords } from 'lucide-react';
+import { StudyDuelModal } from './StudyDuelModal';
+import { Friend } from '@/types';
 
 const ANIMAL_EMOJIS: Record<string, string> = {
   owl: '🦉',
@@ -12,16 +14,21 @@ const ANIMAL_EMOJIS: Record<string, string> = {
   dragon: '🐲',
   axolotl: '🦎',
   robot: '🤖',
+  condor: '🦅',
+  bear: '🐻',
+  capybara: '🦫',
+  fenix: '🔥',
 };
 
 export const FriendsStudyCard: React.FC = () => {
-  const { friends, addFriend, cheerFriend } = useStudyStore();
+  const { friends, subjects, addFriend, cheerFriend } = useStudyStore();
   const { addVolts } = useGamificationStore();
 
   const [emailInput, setEmailInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const [duelFriend, setDuelFriend] = useState<Friend | null>(null);
 
   const handleAddFriend = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -143,25 +150,47 @@ export const FriendsStudyCard: React.FC = () => {
                 </div>
               </div>
 
-              {/* Botón Choca esos cinco */}
-              <button
-                type="button"
-                onClick={() => handleCheer(friend.id, friend.name)}
-                disabled={friend.cheeredToday}
-                className={`btn-game px-2.5 py-1.5 rounded-xl text-xs font-heading font-black transition-all shrink-0 flex items-center gap-1 ${
-                  friend.cheeredToday
-                    ? 'bg-slate-200 dark:bg-slate-700 text-slate-400 cursor-default'
-                    : 'bg-amber-500/15 text-amber-700 dark:text-amber-300 hover:bg-amber-500/25'
-                }`}
-                title={friend.cheeredToday ? '¡Ya animado hoy!' : 'Enviar energía (+5 Voltios)'}
-              >
-                <Zap className="w-3.5 h-3.5 fill-amber-500" />
-                <span>{friend.cheeredToday ? '✓ Animado' : '¡Ánimo!'}</span>
-              </button>
+              {/* Botones de acción: Duelo y Ánimo */}
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setDuelFriend(friend)}
+                  className="btn-game px-2.5 py-1.5 rounded-xl text-xs font-heading font-black bg-rose-500/15 hover:bg-rose-500/25 text-rose-600 dark:text-rose-400 border border-rose-500/30 flex items-center gap-1"
+                  title={`Retar a ${friend.name} a un duelo de 5 preguntas de repaso`}
+                >
+                  <Swords className="w-3.5 h-3.5" />
+                  <span>Duelo</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleCheer(friend.id, friend.name)}
+                  disabled={friend.cheeredToday}
+                  className={`btn-game px-2.5 py-1.5 rounded-xl text-xs font-heading font-black transition-all shrink-0 flex items-center gap-1 ${
+                    friend.cheeredToday
+                      ? 'bg-slate-200 dark:bg-slate-700 text-slate-400 cursor-default'
+                      : 'bg-amber-500/15 text-amber-700 dark:text-amber-300 hover:bg-amber-500/25'
+                  }`}
+                  title={friend.cheeredToday ? '¡Ya animado hoy!' : 'Enviar energía (+5 Voltios)'}
+                >
+                  <Zap className="w-3.5 h-3.5 fill-amber-500" />
+                  <span>{friend.cheeredToday ? '✓' : '¡Ánimo!'}</span>
+                </button>
+              </div>
             </div>
           );
         })}
       </div>
+
+      {/* Modal Duelo Multijugador */}
+      {duelFriend && (
+        <StudyDuelModal
+          friend={duelFriend}
+          subjects={subjects}
+          isOpen={Boolean(duelFriend)}
+          onClose={() => setDuelFriend(null)}
+        />
+      )}
     </div>
   );
 };

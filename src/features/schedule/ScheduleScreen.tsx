@@ -13,7 +13,10 @@ import {
   BookOpen,
   X,
   Sparkles,
+  Download,
 } from 'lucide-react';
+import { generateScheduleIcs, downloadIcsFile } from '@/lib/calendarExport';
+import { soundEngine } from '@/lib/soundEffects';
 
 const DAYS_OF_WEEK: Array<'Lunes' | 'Martes' | 'Miércoles' | 'Jueves' | 'Viernes' | 'Sábado'> = [
   'Lunes',
@@ -113,13 +116,30 @@ export const ScheduleScreen: React.FC = () => {
           </p>
         </div>
 
-        <button
-          onClick={() => setIsAddOpen(true)}
-          className="btn-game px-5 py-2.5 rounded-2xl text-xs font-black text-white bg-blue-600 hover:bg-blue-700 shadow-blue-500/30 flex items-center justify-center gap-2 shrink-0"
-        >
-          <Plus className="w-4 h-4 stroke-[3]" />
-          <span>+ Agregar Clase</span>
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          {schedule.length > 0 && (
+            <button
+              onClick={() => {
+                soundEngine.playSuccessChime();
+                const icsData = generateScheduleIcs(schedule, 16);
+                downloadIcsFile('horario-misemaforo-puj.ics', icsData);
+              }}
+              className="btn-game px-4 py-2.5 rounded-2xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 flex items-center justify-center gap-1.5 shrink-0"
+              title="Descargar archivo .ics compatible con Google Calendar, Apple Calendar y Outlook"
+            >
+              <Download className="w-4 h-4 text-emerald-500" />
+              <span>Exportar a Google / Apple Calendar (.ics)</span>
+            </button>
+          )}
+
+          <button
+            onClick={() => setIsAddOpen(true)}
+            className="btn-game px-5 py-2.5 rounded-2xl text-xs font-black text-white bg-blue-600 hover:bg-blue-700 shadow-blue-500/30 flex items-center justify-center gap-2 shrink-0"
+          >
+            <Plus className="w-4 h-4 stroke-[3]" />
+            <span>+ Agregar Clase</span>
+          </button>
+        </div>
       </div>
 
       {/* Banner de "Hoy" */}
