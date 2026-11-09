@@ -1,8 +1,10 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { METHODOLOGY_PHASES, TEAM_MEMBERS } from '@/data/methodologyData';
 import { useGamificationStore } from '@/store/useGamificationStore';
 import { useTimeStore } from '@/store/useTimeStore';
 import { useStudyStore } from '@/store/useStudyStore';
+import { useSettingsStore } from '@/store/useSettingsStore';
+import { MethodologyCertificateModal } from '@/components/common/MethodologyCertificateModal';
 import {
   Compass,
   Sparkles,
@@ -12,12 +14,15 @@ import {
   ArrowRight,
   Users,
   CheckCircle,
+  Award,
 } from 'lucide-react';
 
 export const MethodologyScreen: React.FC = () => {
   const { recordMethodologyViewed, checkAndAwardBadges } = useGamificationStore();
   const { subjects } = useStudyStore();
+  const { userProfile } = useSettingsStore();
   const { getSimulatedDateStr } = useTimeStore();
+  const [isCertModalOpen, setIsCertModalOpen] = useState(false);
 
   useEffect(() => {
     recordMethodologyViewed();
@@ -39,6 +44,16 @@ export const MethodologyScreen: React.FC = () => {
         <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
           "Del Problema a la Solución Creativa. Continuidad del aprendizaje universitario y escolar fuera de clase."
         </p>
+        <div className="pt-2 flex justify-center">
+          <button
+            type="button"
+            onClick={() => setIsCertModalOpen(true)}
+            className="btn-game px-4 py-2.5 rounded-2xl text-xs font-heading font-black bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-glow flex items-center gap-2"
+          >
+            <Award className="w-4 h-4" />
+            <span>Ver Certificación de Calidad Metodológica & Base Científica</span>
+          </button>
+        </div>
       </div>
 
       {/* Embudo Visual */}
@@ -193,6 +208,14 @@ export const MethodologyScreen: React.FC = () => {
           ))}
         </div>
       </div>
+
+      {/* Modal de Certificación de Calidad y Base Científica */}
+      <MethodologyCertificateModal
+        isOpen={isCertModalOpen}
+        onClose={() => setIsCertModalOpen(false)}
+        studentName={userProfile?.name}
+        careerOrGrade={userProfile?.careerOrGrade}
+      />
     </div>
   );
 };
