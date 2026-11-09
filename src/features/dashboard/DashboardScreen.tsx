@@ -8,6 +8,8 @@ import { calculateBatteryBlocks } from '@/lib/studyEngine';
 import { BatiAvatar } from '@/components/common/BatiAvatar';
 import { TodayMissionCard } from './TodayMissionCard';
 import { DailyQuestsChestCard } from './DailyQuestsChestCard';
+import { InteractivePetCompanion } from './InteractivePetCompanion';
+import { ExamCountdownCard } from './ExamCountdownCard';
 import { SubjectWorldCard } from './SubjectWorldCard';
 import { QuickReviewModal } from './QuickReviewModal';
 import { JaverianaPensumModal } from '@/features/subject/JaverianaPensumModal';
@@ -324,6 +326,12 @@ export const DashboardScreen: React.FC = () => {
           />
         </div>
       )}
+
+      {/* MASCOTA INTERACTIVA CON CONSEJOS COGNITIVOS */}
+      <InteractivePetCompanion />
+
+      {/* ENFOQUE EN PARCIALES Y SEMÁFORO PRIORITARIO */}
+      {subjects.length > 0 && <ExamCountdownCard subjects={subjects} />}
 
       {/* MISIONES DIARIAS & COFRE DE ENGAGEMENT */}
       <DailyQuestsChestCard subjects={subjects} todayStr={today} />

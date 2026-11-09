@@ -6,6 +6,7 @@ import { calculateRank, calculateBatiMood } from '@/lib/rewardEngine';
 import { ANIMAL_COMPANIONS } from '@/config/curriculum.config';
 import { WeeklySummaryCard } from './WeeklySummaryCard';
 import { FriendsStudyCard } from './FriendsStudyCard';
+import { ShareableStudentCardModal } from './ShareableStudentCardModal';
 import { BatiAvatar } from '@/components/common/BatiAvatar';
 import { useTimeStore } from '@/store/useTimeStore';
 import { api } from '@/lib/api';
@@ -24,6 +25,7 @@ import {
   FileText,
   BookOpen,
   Settings,
+  Share2,
 } from 'lucide-react';
 
 export const ProfileScreen: React.FC = () => {
@@ -46,6 +48,7 @@ export const ProfileScreen: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [nameInput, setNameInput] = useState(userProfile.name);
   const [careerInput, setCareerInput] = useState(userProfile.careerOrGrade);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   const currentDateStr = getSimulatedDateStr();
   const rankInfo = calculateRank(xp);
@@ -226,7 +229,15 @@ export const ProfileScreen: React.FC = () => {
               </div>
             </div>
 
-            <div className="mt-3 flex justify-center sm:justify-start">
+            <div className="mt-3 flex flex-wrap items-center justify-center sm:justify-start gap-3">
+              <button
+                type="button"
+                onClick={() => setIsShareModalOpen(true)}
+                className="btn-game px-3.5 py-1.5 rounded-xl text-xs font-heading font-black bg-emerald-500 hover:bg-emerald-400 text-slate-950 flex items-center gap-1.5 shadow-glow"
+              >
+                <Share2 className="w-3.5 h-3.5" />
+                <span>Compartir Logros</span>
+              </button>
               <button
                 onClick={handleLogout}
                 className="inline-flex items-center gap-1.5 text-xs font-bold text-rose-500 hover:underline"
@@ -438,6 +449,12 @@ export const ProfileScreen: React.FC = () => {
           })}
         </div>
       </div>
+
+      {/* Modal de Tarjeta de Logros Compartible */}
+      <ShareableStudentCardModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+      />
     </div>
   );
 };
