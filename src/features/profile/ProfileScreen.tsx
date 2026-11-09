@@ -20,6 +20,10 @@ import {
   Edit2,
   Heart,
   LogOut,
+  Target,
+  FileText,
+  BookOpen,
+  Settings,
 } from 'lucide-react';
 
 export const ProfileScreen: React.FC = () => {
@@ -36,7 +40,7 @@ export const ProfileScreen: React.FC = () => {
     resetGamification,
   } = useGamificationStore();
   const { subjects, resetAllSubjects } = useStudyStore();
-  const { userProfile, setUserProfile, studentLevel, logoutUser } = useSettingsStore();
+  const { userProfile, setUserProfile, studentLevel, logoutUser, setActiveView } = useSettingsStore();
   const { getSimulatedDateStr } = useTimeStore();
 
   const [isEditing, setIsEditing] = useState(false);
@@ -317,6 +321,51 @@ export const ProfileScreen: React.FC = () => {
 
       {/* Red de Amigos */}
       <FriendsStudyCard />
+
+      {/* Accesos Rápidos & Herramientas Académicas */}
+      <div className="card p-5 sm:p-6 space-y-3">
+        <h3 className="font-heading font-black text-sm text-slate-900 dark:text-white">
+          Herramientas y Navegación Rápida
+        </h3>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+          <button
+            type="button"
+            onClick={() => setActiveView('report')}
+            className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/60 hover:border-emerald-500/50 text-left transition group"
+          >
+            <FileText className="w-5 h-5 text-emerald-500 mb-2 group-hover:scale-110 transition-transform" />
+            <p className="font-heading font-black text-xs text-slate-900 dark:text-white">Plan de Estudio</p>
+            <p className="text-[10px] text-slate-400 mt-0.5">Diagnóstico y horas</p>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveView('prioritizer')}
+            className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/60 hover:border-amber-500/50 text-left transition group"
+          >
+            <Target className="w-5 h-5 text-amber-500 mb-2 group-hover:scale-110 transition-transform" />
+            <p className="font-heading font-black text-xs text-slate-900 dark:text-white">Priorizador</p>
+            <p className="text-[10px] text-slate-400 mt-0.5">Matriz Eisenhower</p>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveView('methodology')}
+            className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/60 hover:border-indigo-500/50 text-left transition group"
+          >
+            <BookOpen className="w-5 h-5 text-indigo-500 mb-2 group-hover:scale-110 transition-transform" />
+            <p className="font-heading font-black text-xs text-slate-900 dark:text-white">Metodología & Cert.</p>
+            <p className="text-[10px] text-slate-400 mt-0.5">Base científica</p>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveView('settings')}
+            className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/60 hover:border-sky-500/50 text-left transition group"
+          >
+            <Settings className="w-5 h-5 text-sky-500 mb-2 group-hover:scale-110 transition-transform" />
+            <p className="font-heading font-black text-xs text-slate-900 dark:text-white">Configuración</p>
+            <p className="text-[10px] text-slate-400 mt-0.5">Respaldos y datos</p>
+          </button>
+        </div>
+      </div>
 
       {/* Resumen Semanal */}
       <WeeklySummaryCard

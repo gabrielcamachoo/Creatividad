@@ -42,9 +42,16 @@ export const OnboardingAuthScreen: React.FC = () => {
     toggleDarkMode,
   } = useSettingsStore();
 
-  const { resetAllSubjects, setSubjectsList, setSchedule, setFriends, addSubject, addTopic } =
-    useStudyStore();
-  const { resetGamification, equipAnimal } = useGamificationStore();
+  const {
+    resetAllSubjects,
+    setSubjectsList,
+    setSchedule,
+    setFriends,
+    addSubject,
+    addTopic,
+    loadDemoSubjects,
+  } = useStudyStore();
+  const { resetGamification, equipAnimal, loadDemoProfile } = useGamificationStore();
   const { resetTime } = useTimeStore();
 
   // Fase 1: 'tutorial' -> Fase 2: 'auth'
@@ -417,6 +424,22 @@ export const OnboardingAuthScreen: React.FC = () => {
     }
   };
 
+  const handleQuickDemo = () => {
+    loadDemoSubjects();
+    loadDemoProfile();
+    resetTime();
+    setStudentLevel('university');
+    setUserProfile({
+      name: 'Estudiante Javeriano',
+      careerOrGrade: 'Ingeniería de Sistemas · PUJ Bogotá',
+      studentLevel: 'university',
+      equippedAnimal: 'condor',
+    });
+    setHasSeenOnboardingTutorial(true);
+    setIsAuthenticated(true);
+    setActiveView('dashboard');
+  };
+
   const selectedPetObj =
     ANIMAL_COMPANIONS.find((p) => p.id === chosenAnimal) || ANIMAL_COMPANIONS[0];
 
@@ -465,6 +488,16 @@ export const OnboardingAuthScreen: React.FC = () => {
               <span>Ver tutorial</span>
             </button>
           )}
+
+          <button
+            type="button"
+            onClick={handleQuickDemo}
+            className="btn-game px-3.5 py-1.5 rounded-xl text-xs font-heading font-black bg-amber-500 hover:bg-amber-400 text-slate-950 flex items-center gap-1.5 shadow-glow"
+            title="Explorar la plataforma inmediatamente con datos del pensum Javeriana"
+          >
+            <Zap className="w-3.5 h-3.5 fill-slate-950" />
+            <span>⚡ Modo Demo (1 Clic)</span>
+          </button>
 
           <button
             type="button"
@@ -907,6 +940,17 @@ export const OnboardingAuthScreen: React.FC = () => {
                 </span>
                 <ArrowRight className="w-4 h-4" />
               </button>
+
+              <div className="pt-2 text-center">
+                <button
+                  type="button"
+                  onClick={handleQuickDemo}
+                  className="w-full py-2.5 px-3 rounded-xl border border-dashed border-amber-500/40 text-xs font-heading font-black text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 transition flex items-center justify-center gap-1.5"
+                >
+                  <Zap className="w-3.5 h-3.5" />
+                  <span>⚡ Probar Modo Demo Inmediato (Sin Registro)</span>
+                </button>
+              </div>
             </form>
 
             <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-center gap-1.5 text-[11px] text-slate-400">

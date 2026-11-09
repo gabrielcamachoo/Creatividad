@@ -335,6 +335,7 @@ export const DashboardScreen: React.FC = () => {
           currentDateStr={today}
           onReviewQuick={handleReviewQuick}
           onOpenChallenge60s={(topic, subjectName) => setActive60sTopic({ topic, subjectName })}
+          onOpenSubject={(subjectId) => setActiveView('subject', subjectId)}
         />
       )}
 

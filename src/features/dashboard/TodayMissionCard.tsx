@@ -8,6 +8,7 @@ interface TodayMissionCardProps {
   currentDateStr: string;
   onReviewQuick: (subjectId: string, topicId: string, wasLowBattery: boolean) => void;
   onOpenChallenge60s: (topic: Topic, subjectName: string) => void;
+  onOpenSubject?: (subjectId: string) => void;
 }
 
 const DOT: Record<string, string> = {
@@ -21,6 +22,7 @@ export const TodayMissionCard: React.FC<TodayMissionCardProps> = ({
   currentDateStr,
   onReviewQuick,
   onOpenChallenge60s,
+  onOpenSubject,
 }) => {
   const urgent = calculatePrioritizedTopics(subjects, currentDateStr).slice(0, 3);
 
@@ -38,7 +40,7 @@ export const TodayMissionCard: React.FC<TodayMissionCardProps> = ({
           <div>
             <h2 className="text-xl font-bold">Misión de hoy</h2>
             <p className="text-xs font-bold text-slate-400">
-              Top {urgent.length} temas priorizados por tu semáforo
+              Top {urgent.length} temas priorizados por tu semáforo (clic para entrar a la materia)
             </p>
           </div>
         </div>
@@ -56,13 +58,17 @@ export const TodayMissionCard: React.FC<TodayMissionCardProps> = ({
               className="flex items-center gap-3 p-3.5 rounded-2xl bg-slate-50/90 dark:bg-white/[0.04] border border-slate-200/60 dark:border-white/5 hover:border-emerald-500/30 transition-colors"
             >
               <span className={`w-2.5 h-10 rounded-full shrink-0 ${DOT[item.topic.status]}`} />
-              <div className="flex-1 min-w-0 text-left">
-                <p className="font-bold text-sm truncate text-slate-900 dark:text-white">
+              <div
+                className={`flex-1 min-w-0 text-left ${onOpenSubject ? 'cursor-pointer group' : ''}`}
+                onClick={() => onOpenSubject && onOpenSubject(item.topic.subjectId)}
+                title="Abrir materia y ver todas sus flashcards"
+              >
+                <p className="font-bold text-sm truncate text-slate-900 dark:text-white group-hover:text-emerald-500 transition-colors">
                   {item.topic.name}
                 </p>
                 <div className="flex items-center gap-2 mt-1">
-                  <span className="text-[11px] font-semibold text-slate-400 truncate">
-                    {item.subjectName}
+                  <span className="text-[11px] font-semibold text-slate-400 truncate group-hover:underline">
+                    {item.subjectName} →
                   </span>
                   <span
                     className="flex gap-0.5 shrink-0"
