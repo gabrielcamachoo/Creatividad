@@ -32,6 +32,10 @@ const ANIMAL_EMOJIS: Record<string, string> = {
   dragon: '🐲',
   axolotl: '🦎',
   robot: '🤖',
+  condor: '🦅',
+  bear: '🐻',
+  capybara: '🦫',
+  fenix: '🔥',
 };
 
 /** Anillo circular de progreso de XP alrededor del avatar */

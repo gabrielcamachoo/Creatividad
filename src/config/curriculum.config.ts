@@ -258,6 +258,38 @@ export const ANIMAL_COMPANIONS: AnimalCompanion[] = [
     bonus: '+20% XP en retos Explica en 60s',
     priceVolts: 50,
   },
+  {
+    id: 'condor',
+    name: 'Cóndor Andino',
+    emoji: '🦅',
+    description: 'Visión panorámica de águila andina que sobrevuela parciales y proyectos finales.',
+    bonus: '+25% XP en bloques de estudio Deep Work de 45m',
+    priceVolts: 60,
+  },
+  {
+    id: 'bear',
+    name: 'Oso de Anteojos',
+    emoji: '🐻',
+    description: 'Guardián de los páramos colombianos y símbolo de resistencia académica.',
+    bonus: 'Multiplica por x2 los Voltios al pasar un tema de Rojo a Verde',
+    priceVolts: 65,
+  },
+  {
+    id: 'capybara',
+    name: 'Chigüiro Filósofo',
+    emoji: '🦫',
+    description: 'Serenidad absoluta frente a las semanas más caóticas del semestre.',
+    bonus: 'Genera 1 escudo de racha cada 7 días de repaso continuo',
+    priceVolts: 75,
+  },
+  {
+    id: 'fenix',
+    name: 'Fénix Dorado',
+    emoji: '🔥',
+    description: 'Resurge victorioso tras recuperar materias retiradas o perdidas.',
+    bonus: '+50 XP directo al superar o re-inscribir asignaturas de repetición',
+    priceVolts: 90,
+  },
 ];
 
 export const SUBJECT_EMOJI_LIST = [

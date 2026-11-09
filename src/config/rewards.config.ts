@@ -90,6 +90,38 @@ export const REWARDS_CONFIG = {
       description: 'Borde de neón para tu tarjeta de perfil y avatar.',
       assetKey: 'theme_cyber',
     },
+    {
+      id: 'item_aura_cosmic',
+      name: 'Aura Cósmica Javeriana',
+      category: 'bati_accessory',
+      priceVolts: 55,
+      description: 'Estrellas y destellos dorados que simbolizan el Magis y la excelencia académica.',
+      assetKey: 'aura_cosmic',
+    },
+    {
+      id: 'item_hat_laurel',
+      name: 'Corona de Laureles del Decano',
+      category: 'bati_accessory',
+      priceVolts: 60,
+      description: 'Distinción honorífica para estudiantes con más del 80% de temas en verde.',
+      assetKey: 'hat_laurel',
+    },
+    {
+      id: 'item_theme_javeriano',
+      name: 'Tema Azul & Dorado Javeriano',
+      category: 'theme',
+      priceVolts: 50,
+      description: 'Elegante paleta institucional con acentos dorados y esmeralda.',
+      assetKey: 'theme_javeriano',
+    },
+    {
+      id: 'item_coffee_thermos',
+      name: 'Termo Café de Biblioteca',
+      category: 'bati_accessory',
+      priceVolts: 30,
+      description: 'Dosis infinita de café para amanecidas de entrega y parciales.',
+      assetKey: 'item_coffee',
+    },
   ] as ShopItem[],
 
   // Catálogo de 12 Insignias

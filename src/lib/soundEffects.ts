@@ -91,8 +91,8 @@ class SoundEngine {
     });
   }
 
-  /** Inicia ruido marrón suave (estilo biblioteca / lluvia suave) para concentración */
-  startAmbientFocus(mode: 'brown' | 'rain' | 'off') {
+  /** Inicia ruido marrón, lluvia suave o café / biblioteca para concentración profunda */
+  startAmbientFocus(mode: 'brown' | 'rain' | 'library' | 'off') {
     this.stopAmbientFocus();
     if (mode === 'off') return;
 
@@ -110,6 +110,11 @@ class SoundEngine {
         output[i] = (lastOut + 0.02 * white) / 1.02;
         lastOut = output[i];
         output[i] *= 0.18;
+      } else if (mode === 'library') {
+        // Textura aterciopelada muy profunda y cálida estilo biblioteca
+        output[i] = (lastOut + 0.012 * white) / 1.012;
+        lastOut = output[i];
+        output[i] *= 0.22;
       } else {
         // Suave textura de lluvia filtrada
         output[i] = (lastOut + 0.08 * white) / 1.08;
@@ -124,7 +129,7 @@ class SoundEngine {
 
     const filter = ctx.createBiquadFilter();
     filter.type = 'lowpass';
-    filter.frequency.value = mode === 'brown' ? 420 : 950;
+    filter.frequency.value = mode === 'brown' ? 420 : mode === 'library' ? 280 : 950;
 
     const gain = ctx.createGain();
     gain.gain.setValueAtTime(0.01, ctx.currentTime);

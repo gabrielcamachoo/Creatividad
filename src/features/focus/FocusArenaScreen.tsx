@@ -42,6 +42,10 @@ const ANIMAL_EMOJIS: Record<string, string> = {
   dragon: '🐲',
   axolotl: '🦎',
   robot: '🤖',
+  condor: '🦅',
+  bear: '🐻',
+  capybara: '🦫',
+  fenix: '🔥',
 };
 
 export const FocusArenaScreen: React.FC = () => {
@@ -66,7 +70,7 @@ export const FocusArenaScreen: React.FC = () => {
   const [selectedPreset, setSelectedPreset] = useState(PRESET_TIMERS[0]);
   const [secondsLeft, setSecondsLeft] = useState(PRESET_TIMERS[0].minutes * 60);
   const [isRunning, setIsRunning] = useState(false);
-  const [ambientMode, setAmbientMode] = useState<'off' | 'brown' | 'rain'>('off');
+  const [ambientMode, setAmbientMode] = useState<'off' | 'brown' | 'rain' | 'library'>('off');
   const [pomodoroTargetTopicId, setPomodoroTargetTopicId] = useState<string>('');
   const [sessionBanner, setSessionBanner] = useState<string>('');
 
@@ -485,17 +489,27 @@ export const FocusArenaScreen: React.FC = () => {
               <div className="flex flex-wrap justify-center gap-2">
                 {[
                   { id: 'off', label: '🔇 Silencio' },
-                  { id: 'brown', label: '📚 Biblioteca (Ruido Marrón)' },
+                  { id: 'brown', label: '📚 Ruido Marrón Profundo' },
+                  { id: 'library', label: '🏛️ Biblioteca Universitaria' },
                   { id: 'rain', label: '🌧️ Lluvia Suave' },
                 ].map((s) => (
                   <button
                     key={s.id}
                     type="button"
-                    onClick={() => toggleAmbient(s.id as 'off' | 'brown' | 'rain')}
+                    onClick={() => {
+                      const target = s.id as 'off' | 'brown' | 'rain' | 'library';
+                      if (ambientMode === target || target === 'off') {
+                        soundEngine.stopAmbientFocus();
+                        setAmbientMode('off');
+                      } else {
+                        soundEngine.startAmbientFocus(target);
+                        setAmbientMode(target);
+                      }
+                    }}
                     className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
                       ambientMode === s.id
-                        ? 'bg-indigo-500/15 border-indigo-500 text-indigo-600 dark:text-indigo-300'
-                        : 'border-slate-200 dark:border-slate-700 text-slate-500'
+                        ? 'bg-indigo-500/15 border-indigo-500 text-indigo-600 dark:text-indigo-300 ring-2 ring-indigo-500/30'
+                        : 'border-slate-200 dark:border-slate-700 text-slate-500 hover:border-slate-300'
                     }`}
                   >
                     {s.label}

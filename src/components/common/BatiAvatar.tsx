@@ -18,6 +18,10 @@ const ANIMAL_EMOJI_MAP: Record<string, string> = {
   dragon: '🐲',
   axolotl: '🦎',
   robot: '🤖',
+  condor: '🦅',
+  bear: '🐻',
+  capybara: '🦫',
+  fenix: '🔥',
 };
 
 export const BatiAvatar: React.FC<BatiAvatarProps> = ({
