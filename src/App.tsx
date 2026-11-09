@@ -6,8 +6,10 @@ import { Navbar } from '@/components/common/Navbar';
 import { LevelUpModal } from '@/components/common/LevelUpModal';
 import { BadgeUnlockedToast } from '@/components/common/BadgeUnlockedToast';
 import { CommandPaletteModal } from '@/components/common/CommandPaletteModal';
+import { KeyboardShortcutsModal } from '@/components/common/KeyboardShortcutsModal';
 import { OnboardingAuthScreen } from '@/features/onboarding/OnboardingAuthScreen';
 import { DashboardScreen } from '@/features/dashboard/DashboardScreen';
+import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 
 // Lazy-loaded screens & modals for optimal bundle size & instant initial load
 const HomeScreen = lazy(() =>
@@ -81,23 +83,40 @@ export const App: React.FC = () => {
     isGraduationOpen,
     setIsGraduationOpen,
     isBulkImportOpen,
+    setActiveView,
     showPresentationDock,
   } = useSettingsStore();
 
   const { setSubjectsList, setSchedule, setFriends } = useStudyStore();
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
 
-  // Atajo global Ctrl+K / Cmd+K para abrir el buscador rápido
+  // Atajos globales de teclado (Ctrl+K, ?, D, E, H, P, M)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         setIsCommandPaletteOpen((prev) => !prev);
+        return;
+      }
+
+      // Si el usuario está escribiendo en un input o textarea, no interceptar teclas normales
+      const target = e.target as HTMLElement | null;
+      const isInput =
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.isContentEditable);
+      if (isInput) return;
+
+      if (e.key === '?') {
+        e.preventDefault();
+        setIsShortcutsOpen((prev) => !prev);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [setActiveView]);
 
   useEffect(() => {
     if (isDarkMode) {
@@ -156,49 +175,55 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-[#070b16] text-slate-900 dark:text-slate-100 transition-colors duration-200">
-      <Navbar onOpenCommandPalette={() => setIsCommandPaletteOpen(true)} />
+    <ErrorBoundary>
+      <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-[#070b16] text-slate-900 dark:text-slate-100 transition-colors duration-200">
+        <Navbar onOpenCommandPalette={() => setIsCommandPaletteOpen(true)} />
 
-      <main className="flex-1 pb-24">
-        <Suspense fallback={<ViewFallback />}>{renderActiveView()}</Suspense>
-      </main>
+        <main className="flex-1 pb-24">
+          <Suspense fallback={<ViewFallback />}>{renderActiveView()}</Suspense>
+        </main>
 
-      <footer className="border-t border-slate-200/80 dark:border-slate-800/60 py-7 text-center text-xs text-slate-500 dark:text-slate-400 bg-white/70 dark:bg-slate-900/40 backdrop-blur print:hidden">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <p className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
-            <span>🚦</span>
-            <span>MiSemáforo · Semáforo + Batería de 7 Días + Estudio Activo</span>
-          </p>
-          <p className="text-slate-400">
-            Colegio & Pontificia Universidad Javeriana (47 Pregrados) · Ctrl+K para buscar
-          </p>
-        </div>
-      </footer>
+        <footer className="border-t border-slate-200/80 dark:border-slate-800/60 py-7 text-center text-xs text-slate-500 dark:text-slate-400 bg-white/70 dark:bg-slate-900/40 backdrop-blur print:hidden">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-2">
+            <p className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+              <span>🚦</span>
+              <span>MiSemáforo · Semáforo + Batería de 7 Días + Estudio Activo</span>
+            </p>
+            <p className="text-slate-400">
+              Colegio & Pontificia Universidad Javeriana (47 Pregrados) · Ctrl+K para buscar
+            </p>
+          </div>
+        </footer>
 
-      {/* Modales globales cargados bajo demanda */}
-      <LevelUpModal />
-      <BadgeUnlockedToast />
-      <CommandPaletteModal
-        isOpen={isCommandPaletteOpen}
-        onClose={() => setIsCommandPaletteOpen(false)}
-      />
-      <Suspense fallback={null}>
-        {isBulkImportOpen && <BulkImportModal />}
-        {isMotivationOpen && (
-          <MotivationModal isOpen={isMotivationOpen} onClose={() => setIsMotivationOpen(false)} />
-        )}
-        {isTutorialOpen && (
-          <OnboardingTutorialModal
-            isOpen={isTutorialOpen}
-            onClose={() => setIsTutorialOpen(false)}
-          />
-        )}
-        {isGraduationOpen && (
-          <GraduationModal isOpen={isGraduationOpen} onClose={() => setIsGraduationOpen(false)} />
-        )}
-        {showPresentationDock && <PresentationBar />}
-      </Suspense>
-    </div>
+        {/* Modales globales cargados bajo demanda */}
+        <LevelUpModal />
+        <BadgeUnlockedToast />
+        <CommandPaletteModal
+          isOpen={isCommandPaletteOpen}
+          onClose={() => setIsCommandPaletteOpen(false)}
+        />
+        <KeyboardShortcutsModal
+          isOpen={isShortcutsOpen}
+          onClose={() => setIsShortcutsOpen(false)}
+        />
+        <Suspense fallback={null}>
+          {isBulkImportOpen && <BulkImportModal />}
+          {isMotivationOpen && (
+            <MotivationModal isOpen={isMotivationOpen} onClose={() => setIsMotivationOpen(false)} />
+          )}
+          {isTutorialOpen && (
+            <OnboardingTutorialModal
+              isOpen={isTutorialOpen}
+              onClose={() => setIsTutorialOpen(false)}
+            />
+          )}
+          {isGraduationOpen && (
+            <GraduationModal isOpen={isGraduationOpen} onClose={() => setIsGraduationOpen(false)} />
+          )}
+          {showPresentationDock && <PresentationBar />}
+        </Suspense>
+      </div>
+    </ErrorBoundary>
   );
 };
 

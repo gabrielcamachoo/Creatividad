@@ -32,6 +32,7 @@ import {
   Printer,
 } from 'lucide-react';
 import { GradeCalculatorModal } from './GradeCalculatorModal';
+import { FlashcardStudyModal } from './FlashcardStudyModal';
 import { printSubjectCheatsheet } from '@/lib/pdfExport';
 
 export const SubjectDetailScreen: React.FC = () => {
@@ -62,6 +63,7 @@ export const SubjectDetailScreen: React.FC = () => {
   const [summaryModalTopic, setSummaryModalTopic] = useState<Topic | null>(null);
   const [isSubjectConfigOpen, setIsSubjectConfigOpen] = useState(false);
   const [isGradeCalcOpen, setIsGradeCalcOpen] = useState(false);
+  const [isFlashcardsOpen, setIsFlashcardsOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<'ALL' | MasteryLevel>('ALL');
   const [topicSearch, setTopicSearch] = useState('');
   const [gradeInput, setGradeInput] = useState('4.2');
@@ -305,6 +307,15 @@ export const SubjectDetailScreen: React.FC = () => {
 
           {/* Botones de acción rápida */}
           <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => setIsFlashcardsOpen(true)}
+              className="btn-game px-3.5 py-2 rounded-2xl text-xs font-heading font-black bg-emerald-500 hover:bg-emerald-400 text-slate-950 flex items-center gap-1.5 shadow-glow"
+              title="Iniciar sesión de evocación activa con tarjetas 3D y resumen Feynman"
+            >
+              <span>🎴</span>
+              <span>Repaso Flashcards 3D</span>
+            </button>
+
             <button
               onClick={() => setIsGradeCalcOpen(true)}
               className="btn-game px-3.5 py-2 rounded-2xl text-xs font-heading font-black bg-amber-500/15 hover:bg-amber-500/25 text-amber-700 dark:text-amber-300 border border-amber-500/30 flex items-center gap-1.5"
@@ -859,6 +870,13 @@ export const SubjectDetailScreen: React.FC = () => {
           onSave={(cuts, target) => updateGradeCuts(subject.id, cuts, target)}
         />
       )}
+
+      {/* Modal de Repaso con Flashcards 3D */}
+      <FlashcardStudyModal
+        subject={subject}
+        isOpen={isFlashcardsOpen}
+        onClose={() => setIsFlashcardsOpen(false)}
+      />
     </div>
   );
 };

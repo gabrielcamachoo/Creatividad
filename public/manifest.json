@@ -1,0 +1,19 @@
+{
+  "short_name": "MiSemáforo",
+  "name": "MiSemáforo - Estudio Inteligente",
+  "description": "Plataforma de estudio activo para colegio y universidad con semáforo de dominio, batería de 7 días y simulador de cortes.",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#070b16",
+  "theme_color": "#10b981",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "categories": ["education", "productivity"]
+}

@@ -3,6 +3,7 @@ import { useSettingsStore, AppView } from '@/store/useSettingsStore';
 import { useGamificationStore } from '@/store/useGamificationStore';
 import { useStudyStore } from '@/store/useStudyStore';
 import { calculateRank } from '@/lib/rewardEngine';
+import { CloudSyncStatusPill } from '@/components/common/CloudSyncStatusPill';
 import {
   Flame,
   Zap,
@@ -198,6 +199,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenCommandPalette }) => {
             >
               <HelpCircle className="w-4 h-4" />
             </button>
+            <CloudSyncStatusPill />
             <button
               onClick={toggleDarkMode}
               className="p-2 rounded-xl text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5"
