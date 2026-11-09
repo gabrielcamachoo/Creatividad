@@ -164,20 +164,20 @@ export const MethodologyCertificateModal: React.FC<MethodologyCertificateModalPr
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-sm animate-fade-in text-left">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-slate-950/75 backdrop-blur-sm animate-fade-in text-left">
       <div className="relative w-full max-w-3xl bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[92vh]">
         {/* Cabecera */}
-        <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-gradient-to-r from-amber-500/10 via-emerald-500/10 to-transparent">
-          <div className="flex items-center gap-3">
-            <span className="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-600 dark:text-amber-400 grid place-items-center text-2xl shrink-0">
-              <Award className="w-6 h-6" />
+        <div className="p-4 sm:p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-gradient-to-r from-amber-500/10 via-emerald-500/10 to-transparent">
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <span className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-amber-500/20 text-amber-600 dark:text-amber-400 grid place-items-center text-xl sm:text-2xl shrink-0">
+              <Award className="w-5 h-5 sm:w-6 sm:h-6" />
             </span>
             <div>
               <span className="text-[10px] font-black uppercase tracking-wider text-amber-600 dark:text-amber-400 block">
                 Garantía Científica & Pedagógica
               </span>
-              <h2 className="text-xl sm:text-2xl font-heading font-black text-slate-900 dark:text-white">
-                Certificación del Método Semáforo + Batería 🏅
+              <h2 className="text-lg sm:text-2xl font-heading font-black text-slate-900 dark:text-white">
+                Certificación Semáforo + Batería 🏅
               </h2>
             </div>
           </div>
@@ -190,7 +190,7 @@ export const MethodologyCertificateModal: React.FC<MethodologyCertificateModalPr
         </div>
 
         {/* Pestañas de navegación */}
-        <div className="flex border-b border-slate-200 dark:border-slate-800 px-6 gap-2 bg-slate-50/50 dark:bg-slate-900/50">
+        <div className="flex border-b border-slate-200 dark:border-slate-800 px-4 sm:px-6 gap-2 bg-slate-50/50 dark:bg-slate-900/50 overflow-x-auto no-scrollbar">
           <button
             onClick={() => setActiveTab('certificate')}
             className={`py-3 px-3 text-xs font-heading font-black border-b-2 transition-all flex items-center gap-1.5 ${

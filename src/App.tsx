@@ -179,7 +179,7 @@ export const App: React.FC = () => {
       <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-[#070b16] text-slate-900 dark:text-slate-100 transition-colors duration-200">
         <Navbar onOpenCommandPalette={() => setIsCommandPaletteOpen(true)} />
 
-        <main className="flex-1 pb-24">
+        <main className="flex-1 pb-28 sm:pb-24">
           <Suspense fallback={<ViewFallback />}>{renderActiveView()}</Suspense>
         </main>
 

@@ -55,45 +55,63 @@ export const TopicRow: React.FC<TopicRowProps> = ({
         </div>
       </div>
 
-      {/* Semáforo: 1 toque */}
-      <div className="flex items-center gap-1.5 p-1.5 rounded-full bg-slate-100 dark:bg-white/5 self-start sm:self-auto">
-        {LIGHTS.map((l) => (
-          <button
-            key={l.s}
-            onClick={() => onUpdateStatus(topic.id, l.s)}
-            title={l.label}
-            aria-label={l.label}
-            className={`w-7 h-7 rounded-full transition-all ${
-              topic.status === l.s ? `${l.on} ring-4 scale-110` : 'bg-slate-300 dark:bg-slate-600 opacity-40 hover:opacity-80'
-            }`}
-          />
-        ))}
-      </div>
+      {/* Semáforo: 1 toque táctil */}
+      <div className="flex items-center justify-between sm:justify-start gap-2 w-full sm:w-auto">
+        <div className="flex items-center gap-2 p-1.5 rounded-full bg-slate-100 dark:bg-white/5">
+          {LIGHTS.map((l) => (
+            <button
+              key={l.s}
+              onClick={() => onUpdateStatus(topic.id, l.s)}
+              title={l.label}
+              aria-label={l.label}
+              className={`w-8 h-8 sm:w-7 sm:h-7 rounded-full transition-all touch-manipulation ${
+                topic.status === l.s
+                  ? `${l.on} ring-4 scale-110`
+                  : 'bg-slate-300 dark:bg-slate-600 opacity-40 hover:opacity-80'
+              }`}
+            />
+          ))}
+        </div>
 
-      {/* Acciones */}
-      <div className="flex items-center gap-2">
-        <button
-          onClick={() => onOpenSummary(topic)}
-          title="Resumen"
-          aria-label="Resumen"
-          className={`btn-game w-10 h-10 ${hasSummary ? 'bg-violet-500 text-white' : 'bg-white dark:bg-slate-800 text-slate-500 border border-slate-200 dark:border-white/10'}`}
-        >
-          <FileText className="w-4 h-4" />
-        </button>
-        <button onClick={() => onOpenChallenge60s(topic)} title="Reto 60s" aria-label="Reto 60s" className="btn-game w-10 h-10 bg-amber-400 text-slate-900">
-          <Timer className="w-4 h-4" />
-        </button>
-        <button onClick={() => onReviewToday(topic.id, low)} title="Repasé hoy" className="btn-game h-10 px-4 bg-emerald-500 text-white text-sm">
-          <Check className="w-4 h-4" /> Repasé
-        </button>
-        <button
-          onClick={() => onDeleteTopic(topic.id)}
-          title="Eliminar tema"
-          aria-label="Eliminar tema"
-          className="p-2 text-slate-300 hover:text-rose-500 sm:opacity-0 group-hover:opacity-100 transition"
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
+        {/* Acciones */}
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <button
+            onClick={() => onOpenSummary(topic)}
+            title="Resumen"
+            aria-label="Resumen"
+            className={`btn-game w-9 h-9 sm:w-10 sm:h-10 touch-manipulation ${
+              hasSummary
+                ? 'bg-violet-500 text-white'
+                : 'bg-white dark:bg-slate-800 text-slate-500 border border-slate-200 dark:border-white/10'
+            }`}
+          >
+            <FileText className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => onOpenChallenge60s(topic)}
+            title="Reto 60s"
+            aria-label="Reto 60s"
+            className="btn-game w-9 h-9 sm:w-10 sm:h-10 bg-amber-400 text-slate-900 touch-manipulation"
+          >
+            <Timer className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => onReviewToday(topic.id, low)}
+            title="Repasé hoy"
+            className="btn-game h-9 sm:h-10 px-3.5 sm:px-4 bg-emerald-500 text-white text-xs sm:text-sm touch-manipulation"
+          >
+            <Check className="w-4 h-4 stroke-[3]" />
+            <span>Repasé</span>
+          </button>
+          <button
+            onClick={() => onDeleteTopic(topic.id)}
+            title="Eliminar tema"
+            aria-label="Eliminar tema"
+            className="p-2 text-slate-400 hover:text-rose-500 opacity-70 sm:opacity-0 group-hover:opacity-100 transition touch-manipulation"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
       </div>
     </div>
   );

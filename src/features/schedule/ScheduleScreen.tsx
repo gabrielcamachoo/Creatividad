@@ -268,7 +268,7 @@ export const ScheduleScreen: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => handleDelete(item.id)}
-                          className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-400 hover:text-rose-500 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-all"
+                          className="opacity-70 sm:opacity-0 group-hover:opacity-100 p-2 text-slate-400 hover:text-rose-500 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-all touch-manipulation"
                           title="Eliminar clase"
                         >
                           <Trash2 className="w-3.5 h-3.5" />

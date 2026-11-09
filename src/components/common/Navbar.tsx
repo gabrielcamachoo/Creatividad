@@ -121,17 +121,17 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenCommandPalette }) => {
   return (
     <>
       {/* Barra superior */}
-      <header className="sticky top-0 z-40 bg-white/80 dark:bg-[#0b1020]/80 backdrop-blur-xl border-b border-slate-200/70 dark:border-white/5 print:hidden">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center gap-3">
+      <header className="sticky top-0 z-40 bg-white/85 dark:bg-[#0b1020]/85 backdrop-blur-xl border-b border-slate-200/70 dark:border-white/5 pt-safe print:hidden">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 h-14 sm:h-16 flex items-center gap-2 sm:gap-3">
           <button
             onClick={() => setActiveView('dashboard')}
-            className="flex items-center gap-2 shrink-0"
+            className="flex items-center gap-1.5 sm:gap-2 shrink-0 touch-manipulation"
             aria-label="Inicio"
           >
-            <span className="w-9 h-9 rounded-2xl bg-gradient-to-br from-emerald-400 via-amber-400 to-rose-500 grid place-items-center text-lg shadow-pop-sm">
+            <span className="w-8 h-8 sm:w-9 sm:h-9 rounded-2xl bg-gradient-to-br from-emerald-400 via-amber-400 to-rose-500 grid place-items-center text-base sm:text-lg shadow-pop-sm">
               🚦
             </span>
-            <span className="hidden sm:block font-display font-bold text-lg text-slate-900 dark:text-white">
+            <span className="font-display font-bold text-base sm:text-lg text-slate-900 dark:text-white">
               Mi<span className="text-emerald-500">Semáforo</span>
             </span>
           </button>
@@ -232,7 +232,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenCommandPalette }) => {
             </button>
             <button
               onClick={handleLogout}
-              className="p-2 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors"
+              className="hidden sm:flex p-2 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors"
               title="Cerrar sesión"
               aria-label="Cerrar sesión"
             >
@@ -245,16 +245,16 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenCommandPalette }) => {
       {/* Botón flotante: añadir temas */}
       <button
         onClick={() => setIsBulkImportOpen(true)}
-        className="btn-game fixed z-40 right-4 bottom-24 lg:bottom-8 w-14 h-14 lg:w-auto lg:px-5 bg-emerald-500 hover:bg-emerald-400 text-white shadow-glow print:hidden"
+        className="btn-game fixed z-40 right-3.5 bottom-20 lg:bottom-8 w-12 h-12 lg:w-auto lg:px-5 bg-emerald-500 hover:bg-emerald-400 text-white shadow-glow print:hidden touch-manipulation"
         title="Subir Temas"
         aria-label="Subir Temas"
       >
-        <Plus className="w-6 h-6" />
+        <Plus className="w-5 h-5 lg:w-6 lg:h-6" />
         <span className="hidden lg:inline">Subir Temas</span>
       </button>
 
       {/* Tab bar móvil */}
-      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white/90 dark:bg-[#0b1020]/90 backdrop-blur-xl border-t border-slate-200 dark:border-white/5 pb-[env(safe-area-inset-bottom)] print:hidden">
+      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 dark:bg-[#0b1020]/95 backdrop-blur-2xl border-t border-slate-200/80 dark:border-white/10 pt-1.5 pb-safe print:hidden shadow-2xl">
         <div className="grid grid-cols-5">
           {tabs.map((t) => {
             const Icon = t.icon;
@@ -263,7 +263,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenCommandPalette }) => {
               <button
                 key={t.view}
                 onClick={() => setActiveView(t.view)}
-                className="flex flex-col items-center gap-0.5 py-2.5"
+                className="flex flex-col items-center gap-0.5 py-1.5 touch-manipulation active:scale-90 transition-transform select-none"
               >
                 <span
                   className={`p-1.5 rounded-xl transition-all ${

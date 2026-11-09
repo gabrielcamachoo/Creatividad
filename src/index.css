@@ -140,3 +140,40 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* ========================================================
+   OPTIMIZACIONES MÓVILES (iOS Safari, Android Chrome)
+   ======================================================== */
+@media screen and (max-width: 768px) {
+  /* Evitar auto-zoom intrusivo en iOS al tocar inputs */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+
+  /* Prevenir desbordamiento horizontal en celulares */
+  body {
+    overflow-x: hidden;
+  }
+}
+
+/* Utilidad para barras de desplazamiento ocultas en deslizamientos móviles */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Clases de Safe Area para muescas (notch) y barra de gestos en iPhone */
+.pb-safe {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+.pt-safe {
+  padding-top: max(0.5rem, env(safe-area-inset-top));
+}
